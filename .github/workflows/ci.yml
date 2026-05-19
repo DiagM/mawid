@@ -1,0 +1,98 @@
+name: CI
+
+# Quand ce workflow se déclenche
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Pour économiser des minutes : si tu push 3 fois d'affilée,
+# seul le dernier push lance le workflow (les précédents sont annulés).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================
+  # Job 1 — Backend NestJS
+  # ============================================
+  backend:
+    name: Backend (NestJS)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          tags: mawid-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================
+  # Job 2 — Frontend Next.js
+  # ============================================
+  frontend:
+    name: Frontend (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+        env:
+          # Variable factice pour le build CI (le vrai URL est en runtime)
+          NEXT_PUBLIC_API_URL: http://localhost:3001/api
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          tags: mawid-frontend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
