@@ -1,0 +1,83 @@
+services:
+  # ============================================
+  # PostgreSQL — Base de données
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: mawid-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mawid
+      POSTGRES_PASSWORD: mawid_dev_password
+      POSTGRES_DB: mawid
+    ports:
+      - "5433:5432"
+    volumes:
+      - mawid_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mawid -d mawid"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Backend NestJS — API
+  # ============================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        http_proxy: ${http_proxy:-}
+        https_proxy: ${https_proxy:-}
+    container_name: mawid-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://mawid:mawid_dev_password@postgres:5432/mawid?schema=public
+      BACKEND_PORT: 3001
+      NODE_ENV: development
+      # ---- Fix SSL Prisma (réseau d'entreprise / antivirus) ----
+      PRISMA_CLI_BINARY_TARGETS: linux-musl-openssl-3.0.x
+      # En dernier recours seulement, décommenter la ligne suivante :
+      # NODE_TLS_REJECT_UNAUTHORIZED: "0"
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    # On retire le "npx prisma generate" du command pour le moment
+    # On le lancera manuellement quand on aura le schema en Phase 5
+    command: npm run start:dev
+
+  # ============================================
+  # Frontend Next.js — App
+  # ============================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        http_proxy: ${http_proxy:-}
+        https_proxy: ${https_proxy:-}
+    container_name: mawid-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      NODE_ENV: development
+      # Décommente si le Fast Refresh ne fonctionne pas (Windows/Mac récalcitrants)
+      # WATCHPACK_POLLING: "true"
+      # CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  mawid_postgres_data:
