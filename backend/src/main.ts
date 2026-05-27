@@ -18,4 +18,7 @@ async function bootstrap() {
 
   console.log(`🚀 Backend Mawid démarré sur http://localhost:${port}/api`);
 }
-bootstrap();
+
+// Le "void" indique explicitement qu'on ignore la promesse retournée par bootstrap()
+// (sinon ESLint râle avec @typescript-eslint/no-floating-promises)
+void bootstrap();

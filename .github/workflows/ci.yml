@@ -1,14 +1,11 @@
 name: CI
 
-# Quand ce workflow se déclenche
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 
-# Pour économiser des minutes : si tu push 3 fois d'affilée,
-# seul le dernier push lance le workflow (les précédents sont annulés).
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -38,13 +35,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Génère le client Prisma TypeScript — sinon ESLint et tsc ne connaissent
+      # pas les types prisma.user, prisma.salon, etc.
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        env:
+          # URL factice : prisma generate n'a pas besoin de se connecter à la DB,
+          # mais l'adapter Pg vérifie la présence de DATABASE_URL au chargement.
+          DATABASE_URL: postgresql://user:pass@localhost:5432/db
+
       - name: Lint
         run: npm run lint
 
       - name: Build
         run: npm run build
 
-      # Active Buildx — nécessaire pour utiliser le cache GitHub Actions (gha)
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -88,10 +93,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # Variable factice pour le build CI (le vrai URL est en runtime)
           NEXT_PUBLIC_API_URL: http://localhost:3001/api
 
-      # Active Buildx — nécessaire pour utiliser le cache GitHub Actions (gha)
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
