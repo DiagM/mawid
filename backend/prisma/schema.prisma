@@ -1,13 +1,213 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// ============================================
+// Mawid — Schéma Prisma
+// ============================================
+// Documentation : https://pris.ly/d/prisma-schema
+// Format auto : npx prisma format
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
+// ---- Générateur du client TypeScript ----
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider      = "prisma-client-js"
+  // Cible binaire pour Alpine Linux (notre conteneur Docker)
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  
 }
 
+// ---- Source de données : PostgreSQL ----
 datasource db {
   provider = "postgresql"
+}
+
+// ============================================
+// User — Comptes gérants (et admin plateforme)
+// ============================================
+// En V1 : un User est forcément un gérant.
+// En V2+ : on ajoutera des employés (table Employee liée à User).
+model User {
+  id           String   @id @default(cuid())
+  phone        String   @unique // Format E.164 international, ex: +213555123456
+  passwordHash String // Bcrypt, jamais stocké en clair
+  fullName     String? // Nom complet, optionnel à l'inscription
+  role         UserRole @default(MANAGER)
+
+  // Métadonnées
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  lastLogin DateTime?
+
+  // Relations
+  // Un gérant peut techniquement avoir plusieurs salons (V2+)
+  // En V1, on crée toujours 1 salon par gérant
+  salons Salon[]
+
+  @@index([phone])
+  @@map("users") // Nom de table en base : users (snake_case par convention SQL)
+}
+
+enum UserRole {
+  MANAGER // Gérant d'un salon
+  ADMIN // Admin plateforme Mawid (toi, fondateur)
+}
+
+// ============================================
+// Salon — Établissement de coiffure / beauté
+// ============================================
+model Salon {
+  id          String  @id @default(cuid())
+  slug        String  @unique // URL friendly, ex: "karim-barber"
+  name        String // Nom affiché public
+  description String? @db.Text // Optionnel, présentation du salon
+
+  // Adresse
+  addressLine String // Ex: "12 rue des Frères Bouadou"
+  district    String // Quartier, ex: "Bab Ezzouar"
+  city        String @default("Alger") // V1 = Alger uniquement
+  latitude    Float? // Pour la carte Google Maps
+  longitude   Float?
+
+  // Horaires (V1 simple : 1 plage horaire par jour, fermé certains jours)
+  // En V2, on pourrait éclater en table OpeningHours plus riche.
+  // Format JSON : { "monday": { "open": "09:00", "close": "20:00" }, "tuesday": null, ... }
+  openingHours Json
+
+  // Photos (URLs)
+  photos String[] // Array de chemins/URLs vers les images du salon
+
+  // Statut
+  isActive Boolean @default(true) // Faux = salon désactivé temporairement
+
+  // Métadonnées
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  ownerId      String
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  prestations  Prestation[]
+  blockedSlots BlockedSlot[]
+  reservations Reservation[]
+
+  @@index([slug])
+  @@index([ownerId])
+  @@map("salons")
+}
+
+// ============================================
+// Prestation — Service proposé par un salon
+// ============================================
+// Ex: "Coupe homme", "Barbe", "Coupe + Barbe combo"
+model Prestation {
+  id              String  @id @default(cuid())
+  salonId         String
+  name            String // Ex: "Dégradé américain"
+  description     String? @db.Text
+  durationMinutes Int // Durée en minutes, ex: 30
+  priceCents      Int // Prix en centimes DZD (1500 = 15 DZD), évite virgules flottantes
+  isActive        Boolean @default(true) // Faux = ne plus proposer mais conserver l'historique
+
+  // Ordre d'affichage dans la liste publique
+  displayOrder Int @default(0)
+
+  // Métadonnées
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  salon                  Salon                   @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  reservationPrestations ReservationPrestation[]
+
+  @@index([salonId])
+  @@index([salonId, isActive])
+  @@map("prestations")
+}
+
+// ============================================
+// BlockedSlot — Créneau bloqué manuellement par le gérant
+// ============================================
+// Ex: rendez-vous personnel, pause longue, fermeture exceptionnelle
+model BlockedSlot {
+  id       String   @id @default(cuid())
+  salonId  String
+  startsAt DateTime // Début du blocage (UTC)
+  endsAt   DateTime // Fin du blocage (UTC)
+  reason   String? // Optionnel : "Pause déjeuner", "RDV perso", etc.
+
+  // Métadonnées
+  createdAt DateTime @default(now())
+
+  // Relations
+  salon Salon @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  @@index([salonId, startsAt, endsAt])
+  @@map("blocked_slots")
+}
+
+// ============================================
+// Reservation — Réservation d'un client
+// ============================================
+// Le cœur métier de Mawid.
+model Reservation {
+  id      String @id @default(cuid())
+  salonId String
+
+  // Créneau réservé
+  startsAt DateTime // Début (UTC)
+  endsAt   DateTime // Fin (UTC), calculé : startsAt + somme des durées prestations
+
+  // Infos client (pas de table User pour les clients en V1, juste les infos brutes)
+  clientFirstName String // Prénom seulement, on n'a pas le nom complet
+  clientPhone     String // Format E.164, ex: +213555987654
+
+  // Statut
+  status ReservationStatus @default(CONFIRMED)
+
+  // Token unique pour permettre annulation/modif via lien wa.me sans login
+  cancellationToken String @unique @default(cuid())
+
+  // Notes internes du gérant (privé, jamais montré au client)
+  internalNote String? @db.Text
+
+  // Métadonnées
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  salon                  Salon                   @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  reservationPrestations ReservationPrestation[]
+
+  @@index([salonId, startsAt])
+  @@index([clientPhone])
+  @@index([cancellationToken])
+  @@map("reservations")
+}
+
+enum ReservationStatus {
+  CONFIRMED // Confirmé, à venir
+  HONORED // Client est venu, prestation effectuée
+  NO_SHOW // Client ne s'est pas présenté
+  CANCELED // Annulé (par le client ou le gérant)
+}
+
+// ============================================
+// ReservationPrestation — Table de jonction
+// ============================================
+// Une réservation peut contenir plusieurs prestations (ex: coupe + barbe).
+// On stocke aussi le prix au moment de la réservation pour préserver l'historique
+// si le tarif change plus tard.
+model ReservationPrestation {
+  id            String @id @default(cuid())
+  reservationId String
+  prestationId  String
+
+  // Snapshot au moment de la réservation (immutable)
+  nameSnapshot            String
+  priceCentsSnapshot      Int
+  durationMinutesSnapshot Int
+
+  // Relations
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  prestation  Prestation  @relation(fields: [prestationId], references: [id], onDelete: Restrict)
+
+  @@unique([reservationId, prestationId])
+  @@index([reservationId])
+  @@map("reservation_prestations")
 }
