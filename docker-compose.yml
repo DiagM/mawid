@@ -41,6 +41,8 @@ services:
       NODE_ENV: development
       # ---- Fix SSL Prisma (réseau d'entreprise / antivirus) ----
       PRISMA_CLI_BINARY_TARGETS: linux-musl-openssl-3.0.x
+      JWT_SECRET: dev-jwt-secret-change-me-in-production
+      JWT_EXPIRES_IN: 24h
       # En dernier recours seulement, décommenter la ligne suivante :
       # NODE_TLS_REJECT_UNAUTHORIZED: "0"
     ports:

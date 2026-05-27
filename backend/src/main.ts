@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -13,12 +14,19 @@ async function bootstrap() {
   // Préfixe global /api pour toutes les routes (ex: /api/salons)
   app.setGlobalPrefix('api');
 
+  // Validation automatique de tous les DTOs avec class-validator
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Supprime les champs non déclarés dans le DTO
+      forbidNonWhitelisted: true, // Refuse les requêtes avec des champs inconnus
+      transform: true, // Convertit les types primitifs auto (string → number)
+    }),
+  );
+
   const port = process.env.BACKEND_PORT ?? 3001;
   await app.listen(port, '0.0.0.0');
 
   console.log(`🚀 Backend Mawid démarré sur http://localhost:${port}/api`);
 }
 
-// Le "void" indique explicitement qu'on ignore la promesse retournée par bootstrap()
-// (sinon ESLint râle avec @typescript-eslint/no-floating-promises)
 void bootstrap();
