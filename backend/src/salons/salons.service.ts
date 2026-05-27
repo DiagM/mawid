@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateSalonDto } from './dto/update-salon.dto';
 
@@ -73,20 +74,25 @@ export class SalonsService {
   async updateMine(userId: string, dto: UpdateSalonDto) {
     const salon = await this.findMine(userId);
 
+    // On construit l'objet data en respectant le type strict Prisma.SalonUpdateInput.
+    // Le champ openingHours est typé Json en Prisma → on cast l'instance de classe
+    // (créée par class-transformer) en plain object accepté par Prisma.
+    const data: Prisma.SalonUpdateInput = {
+      ...(dto.name !== undefined && { name: dto.name }),
+      ...(dto.description !== undefined && { description: dto.description }),
+      ...(dto.addressLine !== undefined && { addressLine: dto.addressLine }),
+      ...(dto.district !== undefined && { district: dto.district }),
+      ...(dto.latitude !== undefined && { latitude: dto.latitude }),
+      ...(dto.longitude !== undefined && { longitude: dto.longitude }),
+      ...(dto.openingHours !== undefined && {
+        openingHours: dto.openingHours as unknown as Prisma.InputJsonValue,
+      }),
+      ...(dto.photos !== undefined && { photos: dto.photos }),
+    };
+
     return this.prisma.salon.update({
       where: { id: salon.id },
-      data: {
-        ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.addressLine !== undefined && { addressLine: dto.addressLine }),
-        ...(dto.district !== undefined && { district: dto.district }),
-        ...(dto.latitude !== undefined && { latitude: dto.latitude }),
-        ...(dto.longitude !== undefined && { longitude: dto.longitude }),
-        ...(dto.openingHours !== undefined && {
-          openingHours: dto.openingHours as object,
-        }),
-        ...(dto.photos !== undefined && { photos: dto.photos }),
-      },
+      data,
     });
   }
 }
