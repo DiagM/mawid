@@ -1,26 +1,45 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Mawid brand palette */
+  --color-navy: #0f1e3d;
+  --color-navy-light: #1c3363;
+  --color-sand: #c9a15a;
+  --color-sand-light: #e2c894;
+  --color-beige: #faf6f0;
+  --color-beige-dark: #f0e8db;
+  --color-ink: #1a1a1a;
+  --color-success: #2f8f5b;
+  --color-danger: #b3412c;
+
+  --background: var(--color-beige);
+  --foreground: var(--color-navy);
 }
 
 @theme inline {
+  --color-navy: var(--color-navy);
+  --color-navy-light: var(--color-navy-light);
+  --color-sand: var(--color-sand);
+  --color-sand-light: var(--color-sand-light);
+  --color-beige: var(--color-beige);
+  --color-beige-dark: var(--color-beige-dark);
+  --color-ink: var(--color-ink);
+  --color-success: var(--color-success);
+  --color-danger: var(--color-danger);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-inter);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Real visual distinction for disabled/unavailable slot buttons: */
+.slot-unavailable {
+  text-decoration: line-through;
+  opacity: 0.45;
+  cursor: not-allowed;
 }
