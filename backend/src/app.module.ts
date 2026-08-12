@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { SalonsModule } from './salons/salons.module';
 import { PrestationsModule } from './prestations/prestations.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ReservationsModule } from './reservations/reservations.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     PrestationsModule,
     SalonsModule,
     NotificationsModule,
+    ReservationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
