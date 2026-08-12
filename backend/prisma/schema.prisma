@@ -173,6 +173,7 @@ model Reservation {
   // Relations
   salon                  Salon                   @relation(fields: [salonId], references: [id], onDelete: Cascade)
   reservationPrestations ReservationPrestation[]
+  notifications          Notification[]
 
   @@index([salonId, startsAt])
   @@index([clientPhone])
@@ -210,4 +211,40 @@ model ReservationPrestation {
   @@unique([reservationId, prestationId])
   @@index([reservationId])
   @@map("reservation_prestations")
+}
+
+// ============================================
+// Notification — Suivi des notifications envoyées/à envoyer
+// ============================================
+// V1 : uniquement la confirmation, générée sous forme de lien wa.me manuel
+// (pas d'envoi automatique serveur, cf. NotificationsService).
+// V3 (futur) : une queue de rappels (24h/2h avant le RDV) viendra consommer
+// cette table pour savoir quoi envoyer et marquer le statut.
+model Notification {
+  id            String             @id @default(cuid())
+  reservationId String
+  type          NotificationType
+  canal         String             @default("whatsapp") // Canal d'envoi, ex: "whatsapp", plus tard "sms"
+  status        NotificationStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+  @@index([status])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  CONFIRMATION // Envoyée juste après la réservation
+  REMINDER_24H // Rappel 24h avant le RDV
+  REMINDER_2H // Rappel 2h avant le RDV
+}
+
+enum NotificationStatus {
+  PENDING // Pas encore envoyée
+  SENT // Envoyée avec succès
+  FAILED // Échec d'envoi
 }
