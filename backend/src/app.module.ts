@@ -9,6 +9,7 @@ import { PrestationsModule } from './prestations/prestations.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { BlockedSlotsModule } from './blocked-slots/blocked-slots.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { BlockedSlotsModule } from './blocked-slots/blocked-slots.module';
     NotificationsModule,
     ReservationsModule,
     BlockedSlotsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
