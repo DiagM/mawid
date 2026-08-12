@@ -8,6 +8,7 @@ import { SalonsModule } from './salons/salons.module';
 import { PrestationsModule } from './prestations/prestations.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ReservationsModule } from './reservations/reservations.module';
+import { BlockedSlotsModule } from './blocked-slots/blocked-slots.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ReservationsModule } from './reservations/reservations.module';
     SalonsModule,
     NotificationsModule,
     ReservationsModule,
+    BlockedSlotsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
