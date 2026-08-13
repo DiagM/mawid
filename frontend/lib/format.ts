@@ -68,6 +68,22 @@ export function todayAlgiersDateString(): string {
   return algiers.toISOString().slice(0, 10);
 }
 
+/** Heure actuelle "HH:mm" en heure d'Alger. */
+export function nowAlgiersTimeString(): string {
+  return new Intl.DateTimeFormat("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Africa/Algiers",
+  }).format(new Date());
+}
+
+/** Décale une date "YYYY-MM-DD" de `delta` jours calendaires (heure d'Alger). */
+export function addCalendarDays(dateStr: string, delta: number): string {
+  const date = new Date(`${dateStr}T12:00:00+01:00`);
+  date.setUTCDate(date.getUTCDate() + delta);
+  return date.toISOString().slice(0, 10);
+}
+
 /**
  * Construit l'instant UTC (ISO 8601) correspondant à une date+heure locale
  * d'Alger. Alger est fixe UTC+1 (pas de changement d'heure), donc on laisse
