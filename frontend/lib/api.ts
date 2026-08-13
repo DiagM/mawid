@@ -79,6 +79,26 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+/**
+ * Variante authentifiée de `request` : ajoute l'en-tête `Authorization`.
+ * Le token est fourni explicitement par l'appelant (voir `lib/auth.ts`), pour
+ * que ce module reste un simple client HTTP sans dépendre du stockage du
+ * token (`localStorage`).
+ */
+function requestAuth<T>(
+  path: string,
+  token: string,
+  init?: RequestInit,
+): Promise<T> {
+  return request<T>(path, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...init?.headers,
+    },
+  });
+}
+
 // ============================================
 // Types — reflètent les DTOs du backend NestJS
 // ============================================
@@ -165,6 +185,106 @@ export interface ReservationWithSalon
   salonName: string;
 }
 
+// ---- Espace pro (authentifié) ----
+
+export type UserRole = "MANAGER" | "ADMIN";
+
+export interface ProUser {
+  id: string;
+  phone: string;
+  fullName: string | null;
+  role: UserRole;
+}
+
+export interface LoginResult {
+  accessToken: string;
+  user: ProUser;
+}
+
+/** Salon complet renvoyé par /salons/me (gérant), distinct de la fiche publique. */
+export interface ManagerSalon {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  addressLine: string;
+  district: string;
+  city: string;
+  latitude: number | null;
+  longitude: number | null;
+  openingHours: OpeningHours;
+  photos: string[];
+  isActive: boolean;
+  ownerId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateSalonInput {
+  name?: string;
+  description?: string | null;
+  addressLine?: string;
+  district?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  openingHours?: OpeningHours;
+  photos?: string[];
+}
+
+/** Prestation complète (gérant) : active ou archivée, avec ses métadonnées. */
+export interface ManagerPrestation {
+  id: string;
+  salonId: string;
+  name: string;
+  description: string | null;
+  durationMinutes: number;
+  priceCents: number;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePrestationInput {
+  name: string;
+  description?: string;
+  durationMinutes: number;
+  priceCents: number;
+  displayOrder?: number;
+}
+
+export interface UpdatePrestationInput {
+  name?: string;
+  description?: string | null;
+  durationMinutes?: number;
+  priceCents?: number;
+  displayOrder?: number;
+  isActive?: boolean;
+}
+
+/** Réservation telle que renvoyée par l'agenda du gérant (pas de lien WhatsApp). */
+export type AgendaReservation = Omit<Reservation, "whatsappConfirmationUrl">;
+
+export interface BlockedSlot {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  reason: string | null;
+}
+
+export interface DayAgenda {
+  reservations: AgendaReservation[];
+  blockedSlots: BlockedSlot[];
+}
+
+export type ManualReservationStatus = "HONORED" | "NO_SHOW";
+
+export interface CreateBlockedSlotInput {
+  startsAt: string;
+  endsAt: string;
+  reason?: string;
+}
+
 // ============================================
 // Appels API
 // ============================================
@@ -212,5 +332,97 @@ export const api = {
       `/reservations/token/${encodeURIComponent(token)}/cancel`,
       { method: "POST" },
     );
+  },
+
+  // ---- Espace pro (authentifié) ----
+
+  login(phone: string, password: string): Promise<LoginResult> {
+    return request<LoginResult>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ phone, password }),
+    });
+  },
+
+  getMe(token: string): Promise<ProUser> {
+    return requestAuth<ProUser>("/auth/me", token);
+  },
+
+  getMySalon(token: string): Promise<ManagerSalon> {
+    return requestAuth<ManagerSalon>("/salons/me", token);
+  },
+
+  updateMySalon(
+    token: string,
+    patch: UpdateSalonInput,
+  ): Promise<ManagerSalon> {
+    return requestAuth<ManagerSalon>("/salons/me", token, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    });
+  },
+
+  getMyPrestations(token: string): Promise<ManagerPrestation[]> {
+    return requestAuth<ManagerPrestation[]>("/prestations/me", token);
+  },
+
+  createPrestation(
+    token: string,
+    input: CreatePrestationInput,
+  ): Promise<ManagerPrestation> {
+    return requestAuth<ManagerPrestation>("/prestations", token, {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+
+  updatePrestation(
+    token: string,
+    id: string,
+    patch: UpdatePrestationInput,
+  ): Promise<ManagerPrestation> {
+    return requestAuth<ManagerPrestation>(
+      `/prestations/${encodeURIComponent(id)}`,
+      token,
+      { method: "PATCH", body: JSON.stringify(patch) },
+    );
+  },
+
+  archivePrestation(token: string, id: string): Promise<void> {
+    return requestAuth<void>(`/prestations/${encodeURIComponent(id)}`, token, {
+      method: "DELETE",
+    });
+  },
+
+  getMyDayAgenda(token: string, date?: string): Promise<DayAgenda> {
+    const query = date ? `?date=${encodeURIComponent(date)}` : "";
+    return requestAuth<DayAgenda>(`/reservations/me/day${query}`, token);
+  },
+
+  updateReservationStatus(
+    token: string,
+    id: string,
+    status: ManualReservationStatus,
+  ): Promise<AgendaReservation> {
+    return requestAuth<AgendaReservation>(
+      `/reservations/${encodeURIComponent(id)}/status`,
+      token,
+      { method: "PATCH", body: JSON.stringify({ status }) },
+    );
+  },
+
+  createBlockedSlot(
+    token: string,
+    input: CreateBlockedSlotInput,
+  ): Promise<BlockedSlot> {
+    return requestAuth<BlockedSlot>("/blocked-slots", token, {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+
+  deleteBlockedSlot(token: string, id: string): Promise<void> {
+    return requestAuth<void>(`/blocked-slots/${encodeURIComponent(id)}`, token, {
+      method: "DELETE",
+    });
   },
 };
