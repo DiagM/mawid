@@ -29,6 +29,11 @@ model User {
   fullName     String? // Nom complet, optionnel à l'inscription
   role         UserRole @default(MANAGER)
 
+  // Les comptes gérants sont créés par le fondateur (script create-manager)
+  // avec un mot de passe initial : on force son changement au premier login
+  // plutôt que de laisser vivre un secret connu de deux personnes.
+  mustChangePassword Boolean @default(false)
+
   // Métadonnées
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -57,6 +62,15 @@ model Salon {
   name        String // Nom affiché public
   description String? @db.Text // Optionnel, présentation du salon
 
+  // Numéro WhatsApp public du salon (E.164). Volontairement DISTINCT de
+  // User.phone : ce dernier est l'identifiant de connexion du gérant, et
+  // l'exposer publiquement faciliterait le bruteforce de son compte.
+  contactPhone String
+
+  // Filtre "100 % féminin" de la recherche (business plan §7.1) : un salon
+  // réservé aux femmes est un critère de choix déterminant, pas un détail.
+  isWomenOnly Boolean @default(false)
+
   // Adresse
   addressLine String // Ex: "12 rue des Frères Bouadou"
   district    String // Quartier, ex: "Bab Ezzouar"
@@ -73,7 +87,13 @@ model Salon {
   photos String[] // Array de chemins/URLs vers les images du salon
 
   // Statut
-  isActive Boolean @default(true) // Faux = salon désactivé temporairement
+  // Faux = salon désactivé temporairement, ET état initial d'un salon créé
+  // par onboarding self-service tant que le fondateur ne l'a pas validé.
+  isActive Boolean @default(true)
+
+  // Offre commerciale (business plan §8.1). Le plan ne déclenche aucun
+  // encaissement automatique : il est positionné à la main après paiement.
+  plan SalonPlan @default(FREE)
 
   // Métadonnées
   createdAt DateTime @default(now())
@@ -83,12 +103,57 @@ model Salon {
   ownerId      String
   owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   prestations  Prestation[]
+  employees    Employee[]
   blockedSlots BlockedSlot[]
   reservations Reservation[]
 
   @@index([slug])
   @@index([ownerId])
+  // Recherche publique par ville (business plan §7.1) : on ne liste que les
+  // salons actifs d'une ville donnée.
+  @@index([city, isActive])
   @@map("salons")
+}
+
+enum SalonPlan {
+  FREE // 30 RDV/mois
+  PRO // Illimité + fonctions avancées
+  PRO_PLUS // Pro + caisse et stocks
+}
+
+// ============================================
+// Employee — Membre de l'équipe d'un salon
+// ============================================
+// Le multi-employés est une fonctionnalité V2, mais la table existe dès la V1 :
+// le calcul de disponibilité est écrit "par ressource", et rétrofiter cette
+// notion sur un moteur écrit "par salon" reviendrait à le réécrire.
+// En V1, un salon n'a aucun Employee et ses réservations ont employeeId = null,
+// ce qui signifie "la ressource unique du salon" (le gérant lui-même).
+model Employee {
+  id       String  @id @default(cuid())
+  salonId  String
+  fullName String
+  isActive Boolean @default(true)
+
+  // Ordre d'affichage dans le sélecteur "avec qui ?" côté client
+  displayOrder Int @default(0)
+
+  // Horaires individuels (V2). null = l'employé suit les horaires du salon.
+  // Même format JSON que Salon.openingHours.
+  workingHours Json?
+
+  // Métadonnées
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  salon        Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+  blockedSlots BlockedSlot[]
+
+  @@index([salonId])
+  @@index([salonId, isActive])
+  @@map("employees")
 }
 
 // ============================================
@@ -131,14 +196,49 @@ model BlockedSlot {
   endsAt   DateTime // Fin du blocage (UTC)
   reason   String? // Optionnel : "Pause déjeuner", "RDV perso", etc.
 
+  // null = le salon entier est indisponible (cas V1).
+  // Renseigné = seul cet employé est indisponible (V2).
+  employeeId String?
+
   // Métadonnées
   createdAt DateTime @default(now())
 
   // Relations
-  salon Salon @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  salon    Salon     @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@index([salonId, startsAt, endsAt])
+  @@index([employeeId, startsAt, endsAt])
   @@map("blocked_slots")
+}
+
+// ============================================
+// Client — Personne qui réserve (pas de compte, pas de mot de passe)
+// ============================================
+// Le client final ne crée jamais de compte : cette table n'est pas une table
+// d'authentification, c'est l'identité métier derrière un numéro de téléphone.
+// Elle existe dès la V1 parce que les fiches clients (V3), l'historique et le
+// suivi des no-shows deviendraient impossibles à reconstituer a posteriori si
+// on se contentait de colonnes brutes sur Reservation.
+model Client {
+  id        String @id @default(cuid())
+  phone     String @unique // Clé naturelle, E.164 — un numéro = une personne
+  firstName String // Dernier prénom connu (la réservation en garde un snapshot)
+
+  // Blocage anti-abus. Comme il n'y a pas d'OTP SMS (écarté par la contrainte
+  // de gratuité, cf. docs/MVP_SCOPE.md §2.1), c'est avec le rate limiting le
+  // seul rempart contre les fausses réservations en série.
+  isBlocked Boolean @default(false)
+
+  // Métadonnées
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  reservations Reservation[]
+
+  @@index([phone])
+  @@map("clients")
 }
 
 // ============================================
@@ -149,12 +249,22 @@ model Reservation {
   id      String @id @default(cuid())
   salonId String
 
+  // Ressource qui exécute la prestation.
+  // null = la ressource unique du salon (le gérant) — cas normal en V1.
+  // Renseigné = un employé précis (V2). Le moteur de disponibilité raisonne
+  // dès la V1 sur cette notion de ressource, pour ne pas avoir à le réécrire.
+  employeeId String?
+
   // Créneau réservé
   startsAt DateTime // Début (UTC)
   endsAt   DateTime // Fin (UTC), calculé : startsAt + somme des durées prestations
 
-  // Infos client (pas de table User pour les clients en V1, juste les infos brutes)
-  clientFirstName String // Prénom seulement, on n'a pas le nom complet
+  // Identité du client. clientId est la source de vérité (fiche client,
+  // historique) ; les deux champs qui suivent sont des SNAPSHOTS figés au
+  // moment du RDV, même logique que nameSnapshot sur ReservationPrestation :
+  // corriger une fiche client ne doit jamais réécrire l'historique des RDV.
+  clientId        String
+  clientFirstName String // Prénom tel que donné ce jour-là
   clientPhone     String // Format E.164, ex: +213555987654
 
   // Statut
@@ -171,10 +281,17 @@ model Reservation {
   updatedAt DateTime @updatedAt
 
   // Relations
-  salon                  Salon                   @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  salon    Salon     @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  // Restrict : on ne supprime pas une fiche client qui porte un historique de
+  // RDV. Un droit à l'effacement se traite par anonymisation, pas par DELETE.
+  client   Client    @relation(fields: [clientId], references: [id], onDelete: Restrict)
+
   reservationPrestations ReservationPrestation[]
 
   @@index([salonId, startsAt])
+  @@index([employeeId, startsAt])
+  @@index([clientId])
   @@index([clientPhone])
   @@index([cancellationToken])
   @@map("reservations")

@@ -41,10 +41,15 @@ async function main() {
   // ---- 2. Salon Karim Barber Shop ----
   const salon = await prisma.salon.upsert({
     where: { slug: 'karim-barber' },
-    update: {},
+    // On réaligne le numéro public à chaque seed : c'est lui qui porte tout le
+    // flux de confirmation wa.me, une valeur absente casserait le parcours.
+    update: { contactPhone: '+213555100002' },
     create: {
       slug: 'karim-barber',
       name: 'Karim Barber Shop',
+      // Numéro WhatsApp public du salon, volontairement différent du numéro
+      // de connexion de Karim (+213555100001).
+      contactPhone: '+213555100002',
       description:
         'Barbershop moderne à Bab Ezzouar. Spécialisé dans les coupes tendance, dégradés américains et soins de la barbe.',
       addressLine: '12 rue des Frères Bouadou',
