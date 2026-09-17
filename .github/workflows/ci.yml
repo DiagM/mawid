@@ -50,6 +50,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Tests unitaires : ils n'ont besoin d'aucune base, PrismaService est
+      # remplacé par un double dans chaque suite. On garde donc la CI
+      # découplée de Postgres (cf. docs/DATABASE.md §4).
+      - name: Test
+        run: npm run test
+
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
