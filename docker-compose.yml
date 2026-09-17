@@ -43,6 +43,9 @@ services:
       PRISMA_CLI_BINARY_TARGETS: linux-musl-openssl-3.0.x
       JWT_SECRET: dev-jwt-secret-change-me-in-production
       JWT_EXPIRES_IN: 24h
+      # Origines CORS autorisées. En production, cette variable est
+      # obligatoire : le backend refuse de démarrer sans elle.
+      FRONTEND_ORIGINS: http://localhost:3000
       # En dernier recours seulement, décommenter la ligne suivante :
       # NODE_TLS_REJECT_UNAUTHORIZED: "0"
     ports:

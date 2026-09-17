@@ -1,13 +1,50 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
+
+/**
+ * Origines autorisées pour CORS.
+ *
+ * Lues dans `FRONTEND_ORIGINS` (liste séparée par des virgules). On retombe
+ * sur localhost uniquement s'il n'y a rien de configuré : c'est confortable en
+ * dev, mais une mise en production sans cette variable doit rester visible
+ * plutôt que d'ouvrir silencieusement l'API à un domaine qui n'existe plus.
+ */
+function resolveCorsOrigins(): string[] {
+  const raw = process.env.FRONTEND_ORIGINS?.trim();
+
+  if (!raw) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'FRONTEND_ORIGINS est obligatoire en production : sans elle, CORS ' +
+          'resterait configuré sur http://localhost:3000.',
+      );
+    }
+    return ['http://localhost:3000'];
+  }
+
+  return raw
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Activer CORS pour que le frontend (port 3000) puisse appeler le backend (port 3001)
+  // En-têtes de sécurité HTTP (nosniff, frameguard, HSTS, etc.).
+  // L'API ne sert que du JSON : la CSP par défaut de helmet, pensée pour des
+  // pages HTML, n'apporte rien ici et complique les outils de debug.
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
+
   app.enableCors({
-    origin: ['http://localhost:3000'],
+    origin: resolveCorsOrigins(),
     credentials: true,
   });
 

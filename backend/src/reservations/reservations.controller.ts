@@ -8,9 +8,11 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ReservationsService } from './reservations.service';
 import { AgendaQueryDto } from './dto/agenda-query.dto';
 import { UpdateReservationStatusDto } from './dto/update-reservation-status.dto';
+import { TOKEN_THROTTLE } from '../common/throttling/throttle-config';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
@@ -62,6 +64,7 @@ export class ReservationsController {
    * il ne doit apparaître dans aucun log et la réponse reste minimale.
    */
   @Get('token/:token')
+  @Throttle(TOKEN_THROTTLE)
   findByToken(@Param('token') token: string) {
     return this.reservationsService.findByToken(token);
   }
@@ -73,6 +76,7 @@ export class ReservationsController {
    * les réservations CONFIRMED).
    */
   @Delete('token/:token')
+  @Throttle(TOKEN_THROTTLE)
   cancelByToken(@Param('token') token: string) {
     return this.reservationsService.cancelByToken(token);
   }
