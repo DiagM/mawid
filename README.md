@@ -8,7 +8,7 @@ Plateforme de réservation pour salons de beauté en Algérie. Application web m
 
 ## Stack
 
-- **Frontend** : Next.js 15 (App Router, TypeScript, Tailwind CSS)
+- **Frontend** : Next.js 16 (App Router, TypeScript, Tailwind CSS)
 - **Backend** : NestJS (TypeScript)
 - **Base de données** : PostgreSQL 16 + Prisma ORM
 - **Infrastructure** : Docker Compose
