@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { SalonsService } from './salons.service';
 import { UpdateSalonDto } from './dto/update-salon.dto';
 import { PrestationsService } from '../prestations/prestations.service';

@@ -142,9 +142,7 @@ export class PrestationsService {
     }
 
     if (prestation.salon.ownerId !== userId) {
-      throw new ForbiddenException(
-        "Vous n'avez pas accès à cette prestation",
-      );
+      throw new ForbiddenException("Vous n'avez pas accès à cette prestation");
     }
   }
 }
