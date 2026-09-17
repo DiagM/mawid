@@ -95,11 +95,12 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Réservation client (`POST /api/salons/:slug/reservations`) | ✅ Fait — transactionnelle, 409 sur collision |
 | Annulation par token (`GET`/`DELETE /api/reservations/token/:token`) | ✅ Fait |
 | Agenda gérant (`GET /api/reservations/me`, `PATCH /:id/status`) | ✅ Fait |
-| Création de compte gérant | ❌ À faire (lot 2) |
-| Créneaux bloqués (table prête, lus par le moteur, aucune route d'écriture) | ❌ À faire (lot 2) |
+| Créneaux bloqués (`GET`/`POST`/`DELETE /api/blocked-slots`) | ✅ Fait |
+| Création de compte gérant (`npm run create-manager`) | ✅ Fait — pas de route publique, cf. §3.4 |
+| Changement de mot de passe (`PATCH /api/auth/password`) | ✅ Fait — forcé au premier login |
+| Rate limiting, Helmet, CORS par env | ✅ Fait |
 | Recherche de salons (ville, prestation, filtre féminin) | ❌ À faire (lot 4) |
-| Rate limiting, Helmet, CORS par env | ❌ À faire (lot 2) |
-| Tests | 🟡 42 tests unitaires (temps, disponibilité, isolation A/B), lancés en CI. Pas encore de test d'intégration sur base réelle. |
+| Tests | 🟡 51 tests unitaires lancés en CI. Pas encore de suite d'intégration automatisée sur base réelle (l'isolation A/B a été vérifiée manuellement sur deux salons). |
 
 ### Frontend
 
@@ -123,9 +124,15 @@ contrainte d'exclusion** (409), pas par le contrôle applicatif — les 8 avaien
 toutes lu « créneau libre ». C'est la preuve que la vérification applicative
 seule n'aurait pas suffi.
 
-**Lot 2 — `blocked-slots/`, compte gérant, durcissement.** Routes d'écriture
-des créneaux bloqués, script `create-manager` + `PATCH /auth/password`,
-throttler sur le login et sur la création de réservation, Helmet, CORS par env.
+**Lot 2 — `blocked-slots/`, compte gérant, durcissement.** ✅ Livré le
+2026-09-17. Routes d'écriture des créneaux bloqués (refus de bloquer une
+période contenant des RDV confirmés), script `create-manager` avec mot de
+passe généré et changement forcé au premier login, throttling, Helmet, CORS
+par variable d'environnement.
+
+Isolation vérifiée sur l'API réelle avec deux salons distincts : le gérant A
+reçoit un 403 sur un créneau bloqué du salon B, ne voit ni ses réservations,
+ni ses prestations, ni ses blocages.
 
 **Lot 3 — Frontend V1.** Fiche salon publique, flow de réservation, page
 `/r/<token>`, login + changement de mot de passe forcé, back-office (agenda,

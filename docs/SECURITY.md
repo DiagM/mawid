@@ -23,16 +23,37 @@ Déjà en place (bon niveau) :
 - `.env` correctement exclu du versioning, `.env.example` fourni sans valeurs
   réelles.
 
+Ajouté au lot 2 (2026-09-17) :
+- **Rate limiting** (`@nestjs/throttler`, guard global) : 120 req/min par
+  défaut, 5 tentatives / 15 min sur `/auth/login` et `/auth/password`,
+  20 réservations/h, 30 accès/h par token d'annulation. Toutes les valeurs
+  sont surchargeables par variable d'environnement.
+- **Helmet** dans `main.ts`. La CSP est désactivée volontairement : l'API ne
+  sert que du JSON, une CSP pensée pour des pages HTML n'y apporte rien.
+- **CORS par `FRONTEND_ORIGINS`**, et le démarrage **échoue** si la variable
+  manque en production plutôt que de retomber silencieusement sur localhost.
+- **Tests en CI** : `npm run test` est lancé par `ci.yml`.
+- **bcrypt passé à 12 tours** : le login étant désormais limité à 5 essais par
+  quart d'heure, le surcoût est invisible à l'usage mais rend une attaque hors
+  ligne sur une base volée nettement plus chère.
+
 Manquant à ce jour — à considérer comme prioritaire, pas optionnel :
-- **Rate limiting** : aucun throttling sur `/api/auth/login` ni sur les
-  futures routes de réservation. Un endpoint de login sans limite de
-  tentatives est une porte ouverte au bruteforce de mot de passe.
-- **Helmet / en-têtes de sécurité HTTP** : non configuré dans `main.ts`.
-- **CORS** : actuellement codé en dur sur `http://localhost:3000` — à
-  paramétrer par variable d'environnement avant tout déploiement.
-- **Exécution des tests en CI** : `ci.yml` lint et build mais n'exécute pas
-  `npm run test` — un régression de sécurité pourrait passer sans être
-  détectée automatiquement.
+- **`trust proxy` non configuré**. Derrière un reverse proxy, Express voit
+  l'IP du proxy : tous les clients partageraient alors le même compteur de
+  rate limiting et se bloqueraient mutuellement. À régler **en même temps**
+  que le choix d'hébergement, sinon le throttling deviendra un déni de
+  service involontaire.
+- **CGNAT algérien** : les opérateurs mobiles partagent les IP publiques
+  entre de nombreux abonnés. La limite de 20 réservations/h par IP pourrait
+  bloquer de vrais clients — valeur à surveiller dès les premiers salons,
+  ajustable via `THROTTLE_BOOKING_LIMIT`.
+- **Stockage du throttling en mémoire** : les compteurs repartent à zéro à
+  chaque redémarrage, et ne sont pas partagés entre instances. Acceptable sur
+  une instance unique ; à basculer sur un stockage partagé le jour où il y en
+  a plusieurs.
+- **Révocation des JWT** : changer son mot de passe n'invalide pas les tokens
+  déjà émis (24 h de validité). Nécessiterait un `tokenVersion` vérifié à
+  chaque requête — à faire le jour où un compte est réellement compromis.
 - **JWT_SECRET de dev codé en dur** dans `docker-compose.yml`
   (`dev-jwt-secret-change-me-in-production`) — acceptable en dev local, mais
   s'assurer qu'aucune configuration de production ne réutilise cette valeur

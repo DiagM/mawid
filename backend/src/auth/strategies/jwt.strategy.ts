@@ -39,6 +39,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         phone: true,
         fullName: true,
         role: true,
+        // Exposé pour que le front puisse forcer l'écran de changement de mot
+        // de passe tant que le secret initial du script est encore en place.
+        mustChangePassword: true,
       },
     });
 

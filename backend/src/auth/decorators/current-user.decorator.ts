@@ -22,4 +22,5 @@ export interface AuthenticatedUser {
   phone: string;
   fullName: string | null;
   role: 'MANAGER' | 'ADMIN';
+  mustChangePassword: boolean;
 }
