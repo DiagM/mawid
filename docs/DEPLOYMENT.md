@@ -20,6 +20,19 @@ docker compose up -d
   (`npm run start:dev`).
 - `frontend` : Next.js, port `3000`, hot-reload via volume monté.
 
+**Piège du build frontend en conteneur** : le service `frontend` tourne avec
+`NODE_ENV=development`, ce qu'il faut pour le hot-reload. Mais lancer
+`npm run build` dans ce conteneur sans surcharger la variable fait échouer la
+génération statique de `/_global-error` sur un `TypeError: Cannot read
+properties of null (reading 'useContext')` — React est alors chargé en mode
+développement dans un build de production. La bonne commande est donc :
+
+```bash
+docker exec -e NODE_ENV=production mawid-frontend npm run build
+```
+
+La CI n'est pas concernée : elle construit hors conteneur, sans cette variable.
+
 Point d'attention actuel : les variables Postgres dans `.env.example`
 (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`) ne sont
 **pas réellement branchées** dans `docker-compose.yml` — le service `postgres`

@@ -104,7 +104,15 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 
 ### Frontend
 
-Starter Next.js par défaut. **Aucune** page métier. Tout est à construire.
+| Écran | État |
+| --- | --- |
+| Accueil | ✅ Minimal — la recherche arrive au lot 4 |
+| Fiche salon publique `/[slug]` | ✅ Fait |
+| Tunnel de réservation `/[slug]/reserver` | ✅ Fait — 3 étapes, mobile-first |
+| Confirmation (wa.me + `.ics` + lien de gestion) | ✅ Fait |
+| Gestion/annulation client `/r/[token]` | ✅ Fait — `noindex, nofollow` |
+| Connexion gérant | ❌ À faire (lot 3b) |
+| Back-office (agenda, salon, prestations, indisponibilités) | ❌ À faire (lot 3b) |
 
 ## 5. Ordre de construction
 
@@ -134,9 +142,22 @@ Isolation vérifiée sur l'API réelle avec deux salons distincts : le gérant A
 reçoit un 403 sur un créneau bloqué du salon B, ne voit ni ses réservations,
 ni ses prestations, ni ses blocages.
 
-**Lot 3 — Frontend V1.** Fiche salon publique, flow de réservation, page
-`/r/<token>`, login + changement de mot de passe forcé, back-office (agenda,
-salon, prestations, créneaux bloqués).
+**Lot 3a — Frontend, parcours client.** ✅ Livré le 2026-09-18. Fiche salon,
+tunnel de réservation en 3 étapes, confirmation avec `wa.me` + `.ics` + lien
+de gestion, page `/r/<token>` avec annulation.
+
+Trois règles du linter React de cette version ont orienté le code, et méritent
+d'être connues avant d'écrire un nouvel écran : pas de JSX dans un `try/catch`
+(`react-hooks/error-boundaries`), pas de `setState` dans un effet
+(`react-hooks/set-state-in-effect`), pas d'appel impur comme `Date.now()`
+pendant le rendu (`react-hooks/purity`). Conséquence pratique : le chargement
+des créneaux se fait dans les gestionnaires d'événements et non dans un
+`useEffect`, et les valeurs dépendant de l'heure ou de l'URL sont calculées
+côté serveur puis passées en props.
+
+**Lot 3b — Frontend, back-office gérant.** Connexion, changement de mot de
+passe forcé, agenda, gestion du salon, des prestations et des
+indisponibilités.
 
 **Lot 4 — Complément V1 du business plan.** Recherche ville/prestation +
 filtre 100 % féminin, SEO (metadata, sitemap, JSON-LD `LocalBusiness`), PWA,

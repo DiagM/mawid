@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
+/**
+ * Palette : un vert profond (confiance, proche des codes des salons
+ * algériens) sur fond crème plutôt que blanc pur, plus doux en plein soleil
+ * sur un écran de téléphone — le contexte d'usage réel du produit.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbf9f6;
+  --surface: #ffffff;
+  --foreground: #1c1a17;
+  --muted: #6b6560;
+  --border: #e7e1d9;
+  --accent: #1f6f5c;
+  --accent-hover: #175447;
+  --accent-soft: #e8f2ef;
+  --danger: #b3261e;
+  --danger-soft: #fdeceb;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/*
+ * Police système : aucune requête vers Google Fonts. Un appel réseau de moins
+ * au build comme au chargement, ce qui compte sur une connexion mobile
+ * algérienne — et une dépendance externe de moins.
+ */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", sans-serif;
+}
+
+/* Cibles tactiles confortables : le produit est utilisé au pouce, debout. */
+@media (pointer: coarse) {
+  button,
+  a[role="button"] {
+    min-height: 44px;
+  }
 }

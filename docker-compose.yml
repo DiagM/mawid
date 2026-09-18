@@ -72,7 +72,11 @@ services:
     depends_on:
       - backend
     environment:
+      # Utilisée par le NAVIGATEUR : passe par le port publié sur l'hôte.
       NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      # Utilisée par le SERVEUR Next (composants serveur) : réseau Docker
+      # interne, où "localhost" désignerait le conteneur frontend lui-même.
+      BACKEND_INTERNAL_URL: http://backend:3001/api
       NODE_ENV: development
       # Décommente si le Fast Refresh ne fonctionne pas (Windows/Mac récalcitrants)
       # WATCHPACK_POLLING: "true"
