@@ -62,25 +62,23 @@ export const AUTH_THROTTLE = {
 };
 
 /**
- * Création de réservation : 20 par heure et par IP.
+ * Création de réservation : 60 par heure et par IP.
  *
- * L'OTP SMS étant écarté (contrainte de gratuité, cf. docs/MVP_SCOPE.md §2.1),
- * rien ne prouve qu'un numéro saisi est réel. Sans plafond, on sature l'agenda
- * d'un salon en quelques secondes.
+ * Volontairement LARGE. L'IP est une mauvaise clé en Algérie : les opérateurs
+ * mobiles partagent les IP publiques entre de nombreux abonnés (CGNAT), donc
+ * des clients sans lien entre eux comptent sur le même compteur. Une limite
+ * serrée bloquerait de vraies réservations — bien plus grave qu'un agenda
+ * pollué.
  *
- * ⚠️ Compromis délicat, à surveiller avec de vrais utilisateurs : les
- * opérateurs mobiles algériens utilisent du CGNAT, donc des dizaines de
- * clients sans lien entre eux peuvent partager la même IP publique. Une limite
- * trop basse bloquerait de vraies réservations, ce qui est bien plus grave
- * qu'un agenda pollué. 20/h est un compromis, pas une valeur démontrée —
- * d'où `THROTTLE_BOOKING_LIMIT` pour l'ajuster sans redéployer.
- *
- * Le vrai rempart anti-abus reste `Client.isBlocked`, appliqué au numéro.
+ * Le vrai contrôle anti-abus est ailleurs, appliqué **par numéro et en base**
+ * (`ReservationsService#assertPhoneQuotas`) : il survit aux redémarrages et
+ * reste valable sur plusieurs instances. Ce plafond-ci ne sert plus qu'à
+ * absorber un flood brutal depuis une seule source.
  */
 export const BOOKING_THROTTLE = {
   default: {
     ttl: readPositiveInt('THROTTLE_BOOKING_TTL_SECONDS', 3600) * 1000,
-    limit: readPositiveInt('THROTTLE_BOOKING_LIMIT', 20),
+    limit: readPositiveInt('THROTTLE_BOOKING_LIMIT', 60),
   },
 };
 

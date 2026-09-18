@@ -24,6 +24,10 @@ export interface BookingRules {
   maxTotalDurationMinutes: number;
   /** Nombre maximum de prestations dans une même réservation. */
   maxPrestationsPerReservation: number;
+  /** RDV à venir qu'un même numéro peut détenir dans un salon donné. */
+  maxUpcomingPerPhonePerSalon: number;
+  /** Réservations qu'un même numéro peut créer en 24 h, tous salons confondus. */
+  maxPerPhonePerDay: number;
 }
 
 function readPositiveInt(name: string, fallback: number): number {
@@ -58,5 +62,16 @@ export function getBookingRules(): BookingRules {
       180,
     ),
     maxPrestationsPerReservation: readPositiveInt('BOOKING_MAX_PRESTATIONS', 3),
+    // Saturer un agenda demande BEAUCOUP de réservations : plafonner ce qu'un
+    // numéro peut détenir simultanément rend l'attaque impossible sans changer
+    // de numéro à chaque fois. Un vrai client a rarement 3 RDV à venir dans le
+    // même salon, donc la gêne est quasi nulle.
+    maxUpcomingPerPhonePerSalon: readPositiveInt(
+      'BOOKING_MAX_UPCOMING_PER_PHONE',
+      3,
+    ),
+    // Plafond global par numéro : vise le spam en rafale sur plusieurs salons,
+    // que la règle précédente ne verrait pas.
+    maxPerPhonePerDay: readPositiveInt('BOOKING_MAX_PER_PHONE_PER_DAY', 5),
   };
 }

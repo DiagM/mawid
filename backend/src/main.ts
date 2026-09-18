@@ -1,7 +1,36 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+
+/**
+ * Nombre de proxys de confiance devant l'application.
+ *
+ * Express ne doit croire l'en-tête `X-Forwarded-For` que pour un nombre de
+ * sauts CONNU. Mettre `trust proxy: true` en aveugle est un trou de sécurité :
+ * n'importe qui peut alors forger cet en-tête et contourner entièrement le
+ * rate limiting, puisque chaque requête semblerait venir d'une IP différente.
+ *
+ * Valeurs typiques : 0 en dev (accès direct), 1 derrière un reverse proxy
+ * unique (Caddy, Render, Fly), 2 si Cloudflare proxifie en plus.
+ * Voir docs/DEPLOYMENT.md.
+ */
+function resolveTrustProxyHops(): number {
+  const raw = process.env.TRUST_PROXY_HOPS?.trim();
+  if (!raw) {
+    return 0;
+  }
+
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(
+      `TRUST_PROXY_HOPS doit être un entier positif ou nul (reçu : "${raw}")`,
+    );
+  }
+
+  return parsed;
+}
 
 /**
  * Origines autorisées pour CORS.
@@ -31,7 +60,15 @@ function resolveCorsOrigins(): string[] {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Sans ça, derrière un proxy, toutes les requêtes semblent venir de l'IP du
+  // proxy : tous les clients partageraient le même compteur de rate limiting
+  // et se bloqueraient mutuellement.
+  const trustProxyHops = resolveTrustProxyHops();
+  if (trustProxyHops > 0) {
+    app.set('trust proxy', trustProxyHops);
+  }
 
   // En-têtes de sécurité HTTP (nosniff, frameguard, HSTS, etc.).
   // L'API ne sert que du JSON : la CSP par défaut de helmet, pensée pour des

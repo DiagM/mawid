@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AvailabilityService } from './availability.service';
+import { getBookingRules } from './booking-rules';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationStatusDto } from './dto/update-reservation-status.dto';
 import {
@@ -102,6 +103,8 @@ export class ReservationsService {
         'Réservation impossible. Contactez directement le salon.',
       );
     }
+
+    await this.assertPhoneQuotas(client.id, context.salonId);
 
     try {
       const reservation = await this.prisma.$transaction(async (tx) => {
@@ -303,6 +306,59 @@ export class ReservationsService {
    * Retrouve ou crée la fiche client rattachée à un numéro.
    * Le téléphone est la clé naturelle : un numéro = une personne.
    */
+  /**
+   * Plafonds par numéro de téléphone.
+   *
+   * Pourquoi en base et non dans le throttler : l'IP est une mauvaise clé en
+   * Algérie, où les opérateurs mobiles partagent les IP publiques entre de
+   * nombreux abonnés (CGNAT). Un plafond par IP assez strict pour gêner un
+   * abuseur bloquerait aussi de vrais clients. Le numéro est la bonne clé, et
+   * la base est le bon endroit : le compteur survit à un redémarrage et reste
+   * valable si le service tourne un jour sur plusieurs instances — ce que le
+   * stockage mémoire du throttler ne garantit ni l'un ni l'autre.
+   *
+   * Le throttling par IP est conservé en parallèle, mais volontairement large :
+   * il ne sert plus qu'à absorber un flood brutal.
+   */
+  private async assertPhoneQuotas(clientId: string, salonId: string) {
+    const rules = getBookingRules();
+    const now = new Date();
+
+    const [upcomingInSalon, createdToday] = await Promise.all([
+      // Saturer un agenda suppose de détenir beaucoup de RDV à venir dans CE
+      // salon : c'est précisément ce que ce plafond rend impossible.
+      this.prisma.reservation.count({
+        where: {
+          clientId,
+          salonId,
+          status: 'CONFIRMED',
+          startsAt: { gt: now },
+        },
+      }),
+      // Plafond global, tous salons confondus : vise le spam en rafale.
+      this.prisma.reservation.count({
+        where: {
+          clientId,
+          createdAt: { gt: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
+        },
+      }),
+    ]);
+
+    if (upcomingInSalon >= rules.maxUpcomingPerPhonePerSalon) {
+      throw new ForbiddenException(
+        `Vous avez déjà ${upcomingInSalon} rendez-vous à venir dans ce salon. ` +
+          'Annulez-en un ou contactez directement le salon.',
+      );
+    }
+
+    if (createdToday >= rules.maxPerPhonePerDay) {
+      throw new ForbiddenException(
+        'Trop de réservations depuis ce numéro aujourd’hui. Réessayez demain ' +
+          'ou contactez directement le salon.',
+      );
+    }
+  }
+
   private async upsertClient(phone: string, firstName: string) {
     return this.prisma.client.upsert({
       where: { phone },

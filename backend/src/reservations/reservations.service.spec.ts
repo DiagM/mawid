@@ -36,6 +36,7 @@ describe('ReservationsService', () => {
       findUnique: jest.Mock;
       update: jest.Mock;
       create: jest.Mock;
+      count: jest.Mock;
     };
     client: { upsert: jest.Mock };
     $transaction: jest.Mock;
@@ -54,6 +55,8 @@ describe('ReservationsService', () => {
         findUnique: jest.fn(),
         update: jest.fn().mockResolvedValue({}),
         create: jest.fn(),
+        // Quotas par numéro : aucun RDV existant par défaut.
+        count: jest.fn().mockResolvedValue(0),
       },
       client: {
         upsert: jest.fn().mockResolvedValue({ id: 'cli-1', isBlocked: false }),
@@ -202,6 +205,51 @@ describe('ReservationsService', () => {
       await expect(service.createForSalon('salon-a', dto)).rejects.toThrow(
         'base injoignable',
       );
+    });
+
+    it('refuse un 4e RDV à venir dans le même salon', async () => {
+      // Saturer un agenda demande beaucoup de réservations : ce plafond rend
+      // l'attaque impossible sans changer de numéro à chaque fois.
+      prisma.reservation.count
+        .mockResolvedValueOnce(3)
+        .mockResolvedValueOnce(0);
+
+      await expect(
+        service.createForSalon('salon-a', dto),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('refuse au-delà de 5 réservations en 24 h pour un même numéro', async () => {
+      prisma.reservation.count
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(5);
+
+      await expect(
+        service.createForSalon('salon-a', dto),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('compte les RDV à venir du bon numéro ET du bon salon', async () => {
+      prisma.$transaction.mockResolvedValue({
+        id: 'res-1',
+        startsAt: new Date('2026-10-05T08:00:00.000Z'),
+        endsAt: new Date('2026-10-05T08:30:00.000Z'),
+        status: 'CONFIRMED',
+        cancellationToken: 'tok-1',
+        clientFirstName: 'Amine',
+        reservationPrestations: [],
+      });
+
+      await service.createForSalon('salon-a', dto);
+
+      const quota = firstArg<{
+        where: { clientId: string; salonId: string; status: string };
+      }>(prisma.reservation.count);
+      expect(quota.where.clientId).toBe('cli-1');
+      expect(quota.where.salonId).toBe(SALON_A);
+      expect(quota.where.status).toBe('CONFIRMED');
     });
 
     it('refuse un client bloqué sans lui dire pourquoi', async () => {

@@ -36,17 +36,36 @@ Ajouté au lot 2 (2026-09-17) :
 - **bcrypt passé à 12 tours** : le login étant désormais limité à 5 essais par
   quart d'heure, le surcoût est invisible à l'usage mais rend une attaque hors
   ligne sur une base volée nettement plus chère.
+- **`TRUST_PROXY_HOPS`** : nombre de proxys de confiance, `0` par défaut.
+  Jamais `trust proxy: true` en aveugle — n'importe qui pourrait alors forger
+  `X-Forwarded-For` et contourner tout le rate limiting. Valeur pour le
+  déploiement prévu : `1` (voir `docs/DEPLOYMENT.md` §4.2).
+
+### 1.1 Anti-abus de la réservation publique (sans OTP)
+
+L'OTP SMS étant écarté par la contrainte de gratuité, trois protections le
+remplacent, volontairement complémentaires :
+
+1. **Plafonds par numéro, en base** (`assertPhoneQuotas`) : 3 RDV à venir
+   maximum par salon, 5 réservations créées par 24 h tous salons confondus.
+   C'est le contrôle principal — saturer un agenda demande beaucoup de
+   réservations, ce plafond rend l'opération impossible sans changer de
+   numéro à chaque fois. **En base et non en mémoire** : le compteur survit
+   aux redémarrages et reste valable sur plusieurs instances.
+2. **Throttling par IP, volontairement large** (60/h) : l'IP est une mauvaise
+   clé en Algérie (CGNAT des opérateurs mobiles, de nombreux abonnés derrière
+   une même IP publique). Il ne sert plus qu'à absorber un flood brutal.
+3. **Honeypot** : champ `website` masqué en CSS, qui doit rester vide. Nommé
+   ainsi et non `email` parce que le remplissage automatique des navigateurs
+   adore les champs e-mail et bloquerait de vrais clients. Le front doit le
+   rendre avec `autocomplete="off"` et `tabindex="-1"`.
+
+Si des réservations frauduleuses apparaissent malgré tout, l'étape suivante
+est **Cloudflare Turnstile** (gratuit, sans quota) — non implémenté à ce
+jour, car cela ajoute de la friction et une dépendance externe dans le chemin
+critique pour un problème encore théorique.
 
 Manquant à ce jour — à considérer comme prioritaire, pas optionnel :
-- **`trust proxy` non configuré**. Derrière un reverse proxy, Express voit
-  l'IP du proxy : tous les clients partageraient alors le même compteur de
-  rate limiting et se bloqueraient mutuellement. À régler **en même temps**
-  que le choix d'hébergement, sinon le throttling deviendra un déni de
-  service involontaire.
-- **CGNAT algérien** : les opérateurs mobiles partagent les IP publiques
-  entre de nombreux abonnés. La limite de 20 réservations/h par IP pourrait
-  bloquer de vrais clients — valeur à surveiller dès les premiers salons,
-  ajustable via `THROTTLE_BOOKING_LIMIT`.
 - **Stockage du throttling en mémoire** : les compteurs repartent à zéro à
   chaque redémarrage, et ne sont pas partagés entre instances. Acceptable sur
   une instance unique ; à basculer sur un stockage partagé le jour où il y en
