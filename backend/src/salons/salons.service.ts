@@ -24,26 +24,17 @@ export class SalonsService {
     const offset = dto.offset ?? 0;
     const query = dto.q?.trim();
 
+    // La correspondance textuelle passe par une requête brute : Prisma ne sait
+    // pas exprimer `unaccent()`, sans lequel « elegance » ne trouverait pas
+    // « Élégance » ni « epilation » ne trouverait « Épilation ». Personne ne
+    // tape les accents dans un champ de recherche sur téléphone.
+    const matchedIds = query ? await this.findIdsMatching(query) : null;
+
     const where: Prisma.SalonWhereInput = {
       isActive: true,
       ...(dto.city && { city: dto.city }),
       ...(dto.womenOnly && { isWomenOnly: true }),
-      ...(query && {
-        // On cherche aussi dans les prestations : un client tape « barbe »
-        // bien plus souvent que le nom d'un salon qu'il ne connaît pas encore.
-        OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { district: { contains: query, mode: 'insensitive' } },
-          {
-            prestations: {
-              some: {
-                isActive: true,
-                name: { contains: query, mode: 'insensitive' },
-              },
-            },
-          },
-        ],
-      }),
+      ...(matchedIds !== null && { id: { in: matchedIds } }),
     };
 
     const [salons, total] = await Promise.all([
@@ -86,6 +77,44 @@ export class SalonsService {
         fromPriceCents: salon.prestations[0]?.priceCents ?? null,
       })),
     };
+  }
+
+  /**
+   * Identifiants des salons dont le nom, le quartier ou une prestation active
+   * correspond au texte cherché, accents ignorés.
+   *
+   * On cherche aussi dans les prestations : un client tape « barbe » bien plus
+   * souvent que le nom d'un salon qu'il ne connaît pas encore.
+   *
+   * Requête brute, mais **paramétrée** : le template `$queryRaw` de Prisma
+   * échappe les valeurs, il n'y a pas de concaténation de chaîne. Seuls les
+   * identifiants sont récupérés ici — la lecture des données reste typée par
+   * Prisma juste après.
+   */
+  private async findIdsMatching(query: string): Promise<string[]> {
+    // Les métacaractères LIKE doivent être neutralisés : sans ça, un client
+    // tapant « % » listerait tous les salons.
+    const escaped = query.replace(/[\\%_]/g, (match) => `\\${match}`);
+    const pattern = `%${escaped}%`;
+
+    const rows = await this.prisma.$queryRaw<{ id: string }[]>`
+      SELECT s.id
+      FROM salons s
+      WHERE s."isActive" = true
+        AND (
+          unaccent(s.name) ILIKE unaccent(${pattern})
+          OR unaccent(s.district) ILIKE unaccent(${pattern})
+          OR EXISTS (
+            SELECT 1
+            FROM prestations p
+            WHERE p."salonId" = s.id
+              AND p."isActive" = true
+              AND unaccent(p.name) ILIKE unaccent(${pattern})
+          )
+        )
+    `;
+
+    return rows.map((row) => row.id);
   }
 
   /**

@@ -96,7 +96,9 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Annulation par token (`GET`/`DELETE /api/reservations/token/:token`) | ✅ Fait |
 | Agenda gérant (`GET /api/reservations/me`, `PATCH /:id/status`) | ✅ Fait |
 | Créneaux bloqués (`GET`/`POST`/`DELETE /api/blocked-slots`) | ✅ Fait |
-| Création de compte gérant (`npm run create-manager`) | ✅ Fait — pas de route publique, cf. §3.4 |
+| Création de compte gérant (`npm run create-manager`) | ✅ Fait — onboarding ambassadeurs |
+| Inscription self-service (`POST /api/auth/register`) | ✅ Fait — salon inactif jusqu'à validation |
+| Validation d'un salon (`npm run activate-salon`) | ✅ Fait |
 | Changement de mot de passe (`PATCH /api/auth/password`) | ✅ Fait — forcé au premier login |
 | Rate limiting, Helmet, CORS par env | ✅ Fait |
 | Recherche de salons (`GET /api/salons`, `?city`, `?q`, `?womenOnly`) | ✅ Fait |
@@ -109,6 +111,7 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | --- | --- |
 | Accueil et recherche | ✅ Fait — formulaire en GET, URL partageable |
 | SEO (`sitemap.xml`, `robots.txt`, JSON-LD) | ✅ Fait |
+| Inscription salon `/pro/inscription` | ✅ Fait — seule page pro indexable |
 | PWA (manifeste) | ✅ Fait — sans service worker, cf. lot 4 |
 | Fiche salon publique `/[slug]` | ✅ Fait |
 | Tunnel de réservation `/[slug]/reserver` | ✅ Fait — 3 étapes, mobile-first |
@@ -190,8 +193,22 @@ Pas de service worker volontairement : un cache hors ligne sur des créneaux de
 réservation afficherait des disponibilités périmées, ce qui est pire qu'une
 page qui ne charge pas.
 
-Reste à faire : **onboarding self-service** avec activation manuelle
-(`isActive = false` à la création).
+Onboarding self-service livré : `POST /api/auth/register` crée le gérant et
+son salon **inactif**, invisible en recherche et en 404 sur sa fiche publique
+jusqu'à validation par `npm run activate-salon`. C'est ce qui rend l'ouverture
+de cette route acceptable sans vérification d'identité — un faux salon
+n'atteint aucun client. Le gérant est connecté immédiatement pour préparer ses
+prestations, avec un bandeau qui lui explique pourquoi il n'est pas encore
+visible.
+
+Le refus d'un numéro déjà inscrit ne le confirme pas : sans cette précaution,
+la route deviendrait un oracle permettant d'énumérer les gérants inscrits.
+
+La recherche utilise l'extension `unaccent` : sans elle, « elegance » ne
+trouve pas « Élégance » ni « epilation » ne trouve « Épilation » — personne ne
+tape les accents sur un téléphone. C'est la **deuxième extension Postgres
+requise** après `btree_gist`, à vérifier à la création de la base de
+production (`docs/DEPLOYMENT.md` §4.1).
 
 Bug rattrapé au passage : `contactPhone` et `isWomenOnly`, ajoutés au schéma au
 lot 0, n'avaient jamais été ajoutés au `select` de la fiche publique. Le lien

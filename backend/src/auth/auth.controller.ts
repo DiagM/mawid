@@ -12,6 +12,7 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AUTH_THROTTLE } from '../common/throttling/throttle-config';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -27,6 +28,20 @@ export class AuthController {
    * POST /api/auth/login
    * Connecte un gérant et renvoie un JWT.
    */
+  /**
+   * POST /api/auth/register
+   * Inscription self-service. Le salon créé est inactif jusqu'à validation
+   * manuelle : c'est ce qui permet d'ouvrir cette route sans vérification
+   * d'identité, un faux salon n'atteignant alors aucun client.
+   *
+   * Limitée comme le login : c'est une route d'écriture publique.
+   */
+  @Post('register')
+  @Throttle(AUTH_THROTTLE)
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
+  }
+
   @Post('login')
   // Sans cette limite, un mot de passe faible tombe en quelques minutes.
   @Throttle(AUTH_THROTTLE)

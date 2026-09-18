@@ -139,6 +139,33 @@ export const fr = {
     signingIn: 'Connexion…',
     signOut: 'Déconnexion',
     invalidCredentials: 'Identifiants invalides',
+    noAccount: 'Pas encore de compte ?',
+    createAccount: 'Inscrire mon salon',
+    haveAccount: 'Déjà inscrit ?',
+    backToLogin: 'Se connecter',
+
+    register: {
+      title: 'Inscrire mon salon',
+      subtitle: 'Gratuit, sans engagement. Quelques informations suffisent.',
+      yourAccount: 'Votre compte',
+      yourSalon: 'Votre salon',
+      fullName: 'Votre nom',
+      loginPhone: 'Téléphone de connexion',
+      loginPhoneHelp: 'Sert uniquement à vous connecter. Jamais affiché aux clients.',
+      password: 'Mot de passe',
+      salonName: 'Nom du salon',
+      addressLine: 'Adresse',
+      district: 'Quartier',
+      contactPhone: 'Numéro WhatsApp public',
+      contactPhoneHelp:
+        'Celui que vos clients verront et sur lequel ils vous préviendront.',
+      womenOnly: 'Salon 100 % féminin',
+      submit: 'Créer mon salon',
+      submitting: 'Création…',
+      pendingTitle: 'Salon en attente de validation',
+      pendingHelp:
+        'Votre salon n’est pas encore visible publiquement. Préparez vos prestations et vos horaires : nous le validons sous 48 h.',
+    },
     tooManyAttempts:
       'Trop de tentatives. Patientez quelques minutes avant de réessayer.',
 

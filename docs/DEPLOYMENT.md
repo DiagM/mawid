@@ -71,12 +71,22 @@ point de friction réel depuis l'Algérie.
 ### 4.1 Pourquoi ces choix précisément
 
 - **Neon plutôt que Render Postgres** : la base Postgres gratuite de Render
-  expire au bout de 30 jours. Surtout, Neon autorise l'extension
-  **`btree_gist`**, sans laquelle la contrainte d'exclusion
-  anti-double-réservation ne peut pas être créée — c'est la colonne
-  vertébrale du produit, donc un critère éliminatoire. **À vérifier dès la
-  création de la base** : `CREATE EXTENSION IF NOT EXISTS btree_gist;` doit
-  passer avant d'aller plus loin.
+  expire au bout de 30 jours. Surtout, Neon autorise les deux extensions dont
+  le produit dépend :
+
+  - **`btree_gist`** porte la contrainte d'exclusion anti-double-réservation,
+    c'est-à-dire la colonne vertébrale du produit ;
+  - **`unaccent`** rend la recherche insensible aux accents, sans quoi
+    « elegance » ne trouve pas « Élégance » ni « epilation » ne trouve
+    « Épilation » — personne ne tape les accents sur un téléphone.
+
+  Critère éliminatoire, **à vérifier dès la création de la base** avant
+  d'aller plus loin :
+
+  ```sql
+  CREATE EXTENSION IF NOT EXISTS btree_gist;
+  CREATE EXTENSION IF NOT EXISTS unaccent;
+  ```
 - **Render pour le backend, avec maintien à chaud** : un service gratuit
   s'endort après 15 min d'inactivité et le réveil prend ~50 s. Inacceptable
   pour un produit qui promet « réserver en 60 secondes ». Un ping UptimeRobot

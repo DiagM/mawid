@@ -32,6 +32,26 @@ export function login(
   });
 }
 
+export interface RegisterInput {
+  phone: string;
+  fullName: string;
+  password: string;
+  salonName: string;
+  addressLine: string;
+  district: string;
+  contactPhone: string;
+  isWomenOnly?: boolean;
+  /** Piège à robots : doit rester vide (docs/SECURITY.md §1.1). */
+  website?: string;
+}
+
+export function register(input: RegisterInput): Promise<LoginResponse> {
+  return apiFetch<LoginResponse>('/auth/register', {
+    method: 'POST',
+    body: input,
+  });
+}
+
 export function getMe(token: string): Promise<AuthenticatedUser> {
   return apiFetch<AuthenticatedUser>('/auth/me', { token });
 }

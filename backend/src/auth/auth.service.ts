@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -8,7 +9,39 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { RegisterDto } from './dto/register.dto';
 import { JwtPayload } from './types/jwt-payload.type';
+import { uniqueSlug } from '../common/slug';
+
+/**
+ * Horaires par défaut d'un salon qui vient de s'inscrire : ouvert tous les
+ * jours sauf vendredi. Le gérant les ajuste ensuite depuis son back-office.
+ * Un salon sans horaires ne proposerait aucun créneau et paraîtrait cassé.
+ */
+const DEFAULT_OPENING_HOURS = {
+  monday: { open: '09:00', close: '19:00' },
+  tuesday: { open: '09:00', close: '19:00' },
+  wednesday: { open: '09:00', close: '19:00' },
+  thursday: { open: '09:00', close: '19:00' },
+  friday: null,
+  saturday: { open: '09:00', close: '19:00' },
+  sunday: { open: '09:00', close: '19:00' },
+};
+
+/**
+ * Saisie locale → E.164, seul format stocké (CLAUDE.md §3.3).
+ * Le DTO a déjà validé la forme ; il ne reste qu'à normaliser le préfixe.
+ */
+function toE164(input: string): string {
+  const digits = input.replace(/[\s.\-()]/g, '');
+  const national = /^(?:\+213|00213|0)([5-7]\d{8})$/.exec(digits);
+
+  if (!national) {
+    throw new BadRequestException('Numéro de mobile algérien attendu');
+  }
+
+  return `+213${national[1]}`;
+}
 
 /**
  * Coût bcrypt. 12 plutôt que 10 : le login est désormais limité à 5 essais
@@ -78,6 +111,97 @@ export class AuthService {
 
     return {
       accessToken,
+      user: {
+        id: user.id,
+        phone: user.phone,
+        fullName: user.fullName,
+        role: user.role,
+        mustChangePassword: user.mustChangePassword,
+      },
+    };
+  }
+
+  /**
+   * Inscription self-service d'un gérant et de son salon.
+   *
+   * Le salon est créé **inactif** : invisible en recherche, fiche publique en
+   * 404, jusqu'à validation manuelle par le fondateur. C'est ce qui rend
+   * l'ouverture de cette route acceptable sans vérification d'identité — un
+   * faux salon ne peut atteindre aucun client.
+   *
+   * Le gérant peut néanmoins se connecter immédiatement pour préparer ses
+   * prestations et ses horaires : c'est tout l'intérêt du self-service.
+   */
+  async register(dto: RegisterDto): Promise<LoginResponse> {
+    const phone = toE164(dto.phone);
+    const contactPhone = toE164(dto.contactPhone);
+
+    // Message volontairement vague et identique quel que soit le motif : dire
+    // « ce numéro a déjà un compte » transformerait cette route en oracle
+    // permettant d'énumérer les gérants inscrits (docs/SECURITY.md §2).
+    const existing = await this.prisma.user.findUnique({
+      where: { phone },
+      select: { id: true },
+    });
+
+    if (existing) {
+      throw new ConflictException(
+        'Inscription impossible avec ces informations. Si vous avez déjà un compte, connectez-vous.',
+      );
+    }
+
+    const slug = await uniqueSlug(dto.salonName, async (candidate) => {
+      const taken = await this.prisma.salon.findUnique({
+        where: { slug: candidate },
+        select: { id: true },
+      });
+      return taken !== null;
+    });
+
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
+
+    // Transaction : un gérant sans salon serait bloqué sur tous les écrans du
+    // back-office, qui supposent tous l'existence d'un salon.
+    const user = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          phone,
+          fullName: dto.fullName,
+          passwordHash,
+          role: 'MANAGER',
+          // Le gérant a choisi son mot de passe lui-même : rien à remplacer.
+          mustChangePassword: false,
+        },
+      });
+
+      await tx.salon.create({
+        data: {
+          slug,
+          name: dto.salonName,
+          addressLine: dto.addressLine,
+          district: dto.district,
+          city: 'Alger',
+          contactPhone,
+          isWomenOnly: dto.isWomenOnly ?? false,
+          openingHours: DEFAULT_OPENING_HOURS,
+          photos: [],
+          // Validation manuelle : c'est la contrepartie de l'ouverture.
+          isActive: false,
+          ownerId: created.id,
+        },
+      });
+
+      return created;
+    });
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      phone: user.phone,
+      role: user.role,
+    };
+
+    return {
+      accessToken: await this.jwtService.signAsync(payload),
       user: {
         id: user.id,
         phone: user.phone,

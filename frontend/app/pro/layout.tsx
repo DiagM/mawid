@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fr } from '@/lib/i18n/fr';
+import { getMySalon } from '@/lib/api-pro';
 import { getSessionToken } from '@/lib/session';
 import { logoutAction } from './actions';
 
@@ -23,7 +24,23 @@ export default async function ProLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const hasSession = Boolean(await getSessionToken());
+  const token = await getSessionToken();
+  const hasSession = Boolean(token);
+
+  // Un salon inscrit en self-service reste invisible jusqu'à validation. Sans
+  // ce bandeau, le gérant préparerait son agenda en attendant des clients qui
+  // ne peuvent pas le trouver — et conclurait que le produit ne marche pas.
+  let isPending = false;
+  if (token) {
+    try {
+      const salon = await getMySalon(token);
+      isPending = !salon.isActive;
+    } catch {
+      // Jeton expiré ou backend injoignable : les pages elles-mêmes
+      // redirigeront proprement, inutile de casser le layout ici.
+      isPending = false;
+    }
+  }
 
   return (
     <div className="flex min-h-full flex-col">
@@ -55,6 +72,17 @@ export default async function ProLayout({
             </ul>
           </nav>
         </header>
+      )}
+
+      {isPending && (
+        <div className="border-b border-border bg-accent-soft px-4 py-3">
+          <div className="mx-auto max-w-3xl">
+            <p className="font-medium text-accent">
+              {fr.pro.register.pendingTitle}
+            </p>
+            <p className="mt-1 text-sm">{fr.pro.register.pendingHelp}</p>
+          </div>
+        </div>
       )}
 
       {children}

@@ -29,6 +29,7 @@ describe('SalonsService', () => {
       findFirst: jest.Mock;
       count: jest.Mock;
     };
+    $queryRaw: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -39,6 +40,7 @@ describe('SalonsService', () => {
         findFirst: jest.fn(),
         count: jest.fn().mockResolvedValue(0),
       },
+      $queryRaw: jest.fn().mockResolvedValue([]),
     };
 
     const moduleRef = await Test.createTestingModule({
@@ -75,11 +77,48 @@ describe('SalonsService', () => {
     it('cherche aussi dans les prestations, pas seulement le nom du salon', async () => {
       // Un client tape « barbe » bien plus souvent que le nom d'un salon
       // qu'il ne connaît pas encore.
+      prisma.$queryRaw.mockResolvedValue([{ id: 'salon-a' }]);
+
       await service.search({ q: 'barbe' });
 
-      const query = firstArg<{ where: SearchWhere }>(prisma.salon.findMany);
-      expect(query.where.OR).toHaveLength(3);
-      expect(JSON.stringify(query.where.OR)).toContain('prestations');
+      const sql = JSON.stringify(prisma.$queryRaw.mock.calls[0]);
+      expect(sql).toContain('prestations');
+      // unaccent est indispensable : sans lui « epilation » ne trouverait
+      // jamais « Épilation », et la recherche paraîtrait cassée.
+      expect(sql).toContain('unaccent');
+    });
+
+    it('restreint aux identifiants trouvés par la correspondance textuelle', async () => {
+      prisma.$queryRaw.mockResolvedValue([
+        { id: 'salon-a' },
+        { id: 'salon-c' },
+      ]);
+
+      await service.search({ q: 'barbe' });
+
+      const query = firstArg<{
+        where: SearchWhere & { id?: { in: string[] } };
+      }>(prisma.salon.findMany);
+      expect(query.where.id?.in).toEqual(['salon-a', 'salon-c']);
+      // Le filtre isActive reste appliqué en plus de la correspondance.
+      expect(query.where.isActive).toBe(true);
+    });
+
+    it('neutralise les métacaractères LIKE', async () => {
+      // Sans échappement, un client tapant « % » listerait tous les salons.
+      prisma.$queryRaw.mockResolvedValue([]);
+
+      await service.search({ q: '100%' });
+
+      // calls[0] = [tableau du template, puis chaque valeur interpolée].
+      const call = prisma.$queryRaw.mock.calls[0] as unknown[];
+      expect(call[1]).toBe('%100\\%%');
+    });
+
+    it("n'interroge pas la base textuellement sans terme de recherche", async () => {
+      await service.search({ city: 'Alger' });
+
+      expect(prisma.$queryRaw).not.toHaveBeenCalled();
     });
 
     it("n'expose aucun champ interne", async () => {

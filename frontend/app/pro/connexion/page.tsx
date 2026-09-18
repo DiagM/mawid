@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { fr } from '@/lib/i18n/fr';
 import { getSessionToken } from '@/lib/session';
@@ -24,6 +25,16 @@ export default async function LoginPage() {
       <p className="mb-8 mt-1 text-muted">{fr.pro.loginSubtitle}</p>
 
       <LoginForm />
+
+      <p className="mt-6 text-center text-sm text-muted">
+        {fr.pro.noAccount}{' '}
+        <Link
+          href="/pro/inscription"
+          className="text-accent underline underline-offset-4"
+        >
+          {fr.pro.createAccount}
+        </Link>
+      </p>
     </main>
   );
 }

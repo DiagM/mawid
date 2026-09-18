@@ -1,0 +1,14 @@
+-- ============================================
+-- Recherche insensible aux accents
+-- ============================================
+-- Sans cette extension, chercher « elegance » ne trouve pas « Institut
+-- Élégance », et « epilation » ne trouve pas « Épilation ». Personne ne tape
+-- les accents dans un champ de recherche sur téléphone : la recherche
+-- paraîtrait simplement cassée.
+--
+-- Migration vide côté Prisma (aucun changement de schéma) : seule l'extension
+-- est ajoutée, et `SalonsService#search` l'utilise via une requête brute.
+--
+-- ⚠️ Dépendance d'hébergement : comme `btree_gist`, cette extension doit être
+-- disponible sur la base de production. Voir docs/DEPLOYMENT.md §4.1.
+CREATE EXTENSION IF NOT EXISTS unaccent;

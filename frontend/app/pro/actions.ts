@@ -79,6 +79,45 @@ export async function loginAction(
   redirect(mustChangePassword ? '/pro/mot-de-passe' : '/pro');
 }
 
+/**
+ * Inscription self-service.
+ *
+ * Le salon créé est inactif : invisible en recherche et fiche publique en 404
+ * jusqu'à validation manuelle. Le gérant est connecté immédiatement pour
+ * pouvoir préparer ses prestations et ses horaires en attendant.
+ */
+export async function registerAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const phone = toE164(String(formData.get('phone') ?? ''));
+  const contactPhone = toE164(String(formData.get('contactPhone') ?? ''));
+
+  if (!phone || !contactPhone) {
+    return { error: fr.booking.phoneInvalid };
+  }
+
+  try {
+    const result = await pro.register({
+      phone,
+      fullName: String(formData.get('fullName') ?? ''),
+      password: String(formData.get('password') ?? ''),
+      salonName: String(formData.get('salonName') ?? ''),
+      addressLine: String(formData.get('addressLine') ?? ''),
+      district: String(formData.get('district') ?? ''),
+      contactPhone,
+      isWomenOnly: formData.get('isWomenOnly') === 'on',
+      website: String(formData.get('website') ?? ''),
+    });
+
+    await createSession(result.accessToken);
+  } catch (error) {
+    return { error: toMessage(error, fr.common.error) };
+  }
+
+  redirect('/pro/salon');
+}
+
 export async function logoutAction(): Promise<void> {
   await destroySession();
   redirect('/pro/connexion');
