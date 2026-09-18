@@ -1,11 +1,11 @@
 # Déploiement et exploitation — Mawid
 
-## 1. État actuel : dev uniquement
+## 1. État actuel
 
-Le projet n'a **aucune décision d'hébergement de production arrêtée** à ce
-jour. Tout ce qui existe est pensé pour le développement local via Docker
-Compose. Ne pas supposer Vercel, Supabase ou tout autre hébergeur tant que ce
-n'est pas explicitement décidé et documenté ici.
+Le code tourne en local via Docker Compose. Le plan de **premier déploiement
+gratuit** est arrêté et décrit au §4 (Neon + Render + Netlify), mais **rien
+n'est encore déployé** : aucun compte n'est créé, aucune de ces variables
+n'est positionnée quelque part.
 
 ## 2. Environnement de développement (existant)
 
@@ -39,23 +39,91 @@ brancher `docker-compose.yml` sur les variables du `.env`, soit simplifier
   et sont fiables, plutôt que de laisser cette lacune s'installer durablement.
 - Pas de déploiement automatique configuré (pas de job `push`/`deploy`).
 
-## 4. Ce qu'il faut décider avant une mise en production
+## 4. Plan de premier déploiement — 100 % gratuit
 
-Ces questions doivent être tranchées explicitement avec l'utilisateur — ne
-pas les résoudre unilatéralement dans le code :
+Objectif : mettre les 3 salons ambassadeurs en ligne sans dépenser un dinar
+et **sans carte bancaire**. Ce dernier point est le critère décisif : Oracle
+Cloud, Google Cloud et AWS offrent des paliers gratuits plus confortables,
+mais exigent tous une carte pour la vérification d'identité, ce qui est un
+point de friction réel depuis l'Algérie.
 
-1. **Hébergement** : VPS unique avec Docker Compose (le plus proche de la
-   config actuelle, simple pour un solo-founder en phase bootstrap) vs.
-   plateformes managées séparées (ex. Vercel pour le frontend + un hébergeur
-   Node/Postgres managé pour le backend). Le choix a un impact direct sur
-   `docker-compose.yml`, les variables d'environnement, et la stratégie CORS.
-2. **Nom de domaine et HTTPS** : reverse proxy (Caddy/Nginx/Traefik) avec
-   certificat Let's Encrypt si VPS, ou géré nativement si plateforme managée.
-3. **Stratégie de sauvegarde Postgres** : `pg_dump` planifié a minima,
-   testé une fois pour vérifier qu'une restauration fonctionne réellement.
-4. **Monitoring** : rien n'est branché à ce jour (pas de Sentry ni
-   équivalent) — à ajouter avant que de vrais salons/clients utilisent le
-   produit, pour ne pas découvrir les bugs par leurs retours.
+| Brique | Service | Plan | Carte ? |
+| --- | --- | --- | --- |
+| Base de données | **Neon** | Free (0,5 Go) | non |
+| Backend NestJS | **Render** | Free Web Service (Docker) | non |
+| Frontend Next.js | **Netlify** | Starter | non |
+| Maintien à chaud + alertes | **UptimeRobot** | Free (5 min) | non |
+| Suivi d'erreurs | **Sentry** | Developer (5 k/mois) | non |
+
+### 4.1 Pourquoi ces choix précisément
+
+- **Neon plutôt que Render Postgres** : la base Postgres gratuite de Render
+  expire au bout de 30 jours. Surtout, Neon autorise l'extension
+  **`btree_gist`**, sans laquelle la contrainte d'exclusion
+  anti-double-réservation ne peut pas être créée — c'est la colonne
+  vertébrale du produit, donc un critère éliminatoire. **À vérifier dès la
+  création de la base** : `CREATE EXTENSION IF NOT EXISTS btree_gist;` doit
+  passer avant d'aller plus loin.
+- **Render pour le backend, avec maintien à chaud** : un service gratuit
+  s'endort après 15 min d'inactivité et le réveil prend ~50 s. Inacceptable
+  pour un produit qui promet « réserver en 60 secondes ». Un ping UptimeRobot
+  toutes les 5 minutes sur `/api/health` le garde éveillé : ~730 h/mois, ce
+  qui tient dans le budget gratuit de 750 h — **à condition qu'un seul
+  service Render soit maintenu ainsi**. D'où le frontend ailleurs.
+- **Netlify plutôt que Vercel** : le plan Hobby de Vercel est réservé à un
+  usage **non commercial**. Mawid est un produit commercial : ce serait une
+  violation de licence, pas une astuce. Le plan Starter de Netlify autorise
+  l'usage commercial et gère Next.js sans adaptateur particulier.
+  Cloudflare Pages conviendrait aussi, mais le SSR de Next.js y demande
+  l'adaptateur OpenNext — du travail en plus pour un premier déploiement.
+- **Pas de nom de domaine nécessaire pour démarrer** : `*.onrender.com` et
+  `*.netlify.app` fournissent HTTPS automatiquement. Un domaine
+  (~10-15 $/an) reste le seul poste qui finira par coûter, et uniquement
+  pour la crédibilité commerciale auprès des salons.
+
+### 4.2 Variables à positionner
+
+```bash
+# Backend (Render)
+DATABASE_URL=<chaîne Neon, avec ?sslmode=require>
+JWT_SECRET=<32+ octets aléatoires, JAMAIS celui de docker-compose.yml>
+FRONTEND_ORIGINS=https://mawid.netlify.app
+TRUST_PROXY_HOPS=1          # Render termine le TLS et ajoute X-Forwarded-For
+NODE_ENV=production
+
+# Frontend (Netlify)
+NEXT_PUBLIC_API_URL=https://mawid-api.onrender.com/api
+```
+
+`TRUST_PROXY_HOPS=1` est **la valeur exacte pour cette topologie**, et elle
+n'est pas anodine : à 0, tous les clients partagent l'IP de Render et se
+bloquent mutuellement au rate limiting ; avec `trust proxy: true` en aveugle,
+n'importe qui peut forger `X-Forwarded-For` et le contourner entièrement. Si
+Cloudflare est ajouté devant l'API plus tard, la valeur passe à 2.
+
+### 4.3 Sauvegardes
+
+`pg_dump` quotidien via GitHub Actions (cron), archivé en artefact de build —
+gratuit et suffisant à cette échelle. **Une restauration doit être testée une
+fois** : une sauvegarde jamais restaurée n'est pas une sauvegarde.
+
+### 4.4 Réserves honnêtes
+
+- Les paliers gratuits changent souvent. Vérifier les conditions au moment
+  de l'inscription plutôt que de faire confiance à ce document.
+- Neon met la base en veille après inactivité, mais le réveil est inférieur
+  à la seconde — sans commune mesure avec les 50 s de Render.
+- 0,5 Go de base = des années de réservations à cette échelle.
+- Trois fournisseurs = trois pannes possibles. C'est le prix du gratuit ; la
+  migration vers un VPS unique (§4.5) supprime cette dispersion.
+
+### 4.5 Quand ça paiera : la sortie de secours
+
+Le code ne dépend d'**aucun SDK d'hébergeur** : tout passe par des variables
+d'environnement. Migrer vers un VPS unique (~5 $/mois, ou une VM Oracle
+« Always Free » si la carte de vérification n'est plus un obstacle) avec le
+`docker-compose.yml` existant + Caddy consiste à changer trois variables et
+à restaurer un `pg_dump`. `TRUST_PROXY_HOPS` reste à 1 derrière Caddy.
 
 ## 5. Recommandations générales, valables quel que soit le choix d'hébergement
 
