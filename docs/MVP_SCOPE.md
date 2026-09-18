@@ -111,8 +111,12 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Tunnel de réservation `/[slug]/reserver` | ✅ Fait — 3 étapes, mobile-first |
 | Confirmation (wa.me + `.ics` + lien de gestion) | ✅ Fait |
 | Gestion/annulation client `/r/[token]` | ✅ Fait — `noindex, nofollow` |
-| Connexion gérant | ❌ À faire (lot 3b) |
-| Back-office (agenda, salon, prestations, indisponibilités) | ❌ À faire (lot 3b) |
+| Connexion gérant `/pro/connexion` | ✅ Fait — JWT en cookie `httpOnly` |
+| Changement de mot de passe forcé `/pro/mot-de-passe` | ✅ Fait |
+| Agenda `/pro` | ✅ Fait — qualification des RDV, total du jour |
+| Mon salon `/pro/salon` | ✅ Fait — infos et horaires |
+| Prestations `/pro/prestations` | ✅ Fait — création, archivage, réactivation |
+| Indisponibilités `/pro/indisponibilites` | ✅ Fait |
 
 ## 5. Ordre de construction
 
@@ -155,9 +159,24 @@ des créneaux se fait dans les gestionnaires d'événements et non dans un
 `useEffect`, et les valeurs dépendant de l'heure ou de l'URL sont calculées
 côté serveur puis passées en props.
 
-**Lot 3b — Frontend, back-office gérant.** Connexion, changement de mot de
-passe forcé, agenda, gestion du salon, des prestations et des
-indisponibilités.
+**Lot 3b — Frontend, back-office gérant.** ✅ Livré le 2026-09-18. Connexion,
+changement de mot de passe forcé, agenda, gestion du salon, des prestations et
+des indisponibilités.
+
+Choix structurant : le JWT vit dans un cookie `httpOnly`, jamais dans
+`localStorage`. Un jeton lisible par JavaScript serait récupérable par toute
+faille XSS, et il donne accès à l'agenda complet d'un salon et aux numéros de
+tous ses clients. Conséquence : toutes les pages du back-office sont des
+composants serveur et toutes les écritures passent par des Server Actions.
+
+⚠️ Une Server Action est joignable par un POST direct, sans passer par
+l'interface. Chacune vérifie donc la session elle-même — un contrôle unique
+dans le layout ne protégerait rien. Le layout ne fait qu'afficher la
+navigation.
+
+Isolation vérifiée sur l'interface réelle avec deux salons : le gérant A ne
+voit ni les prestations, ni le salon, ni l'agenda du salon B, et
+réciproquement. Le JWT n'apparaît dans aucune page servie.
 
 **Lot 4 — Complément V1 du business plan.** Recherche ville/prestation +
 filtre 100 % féminin, SEO (metadata, sitemap, JSON-LD `LocalBusiness`), PWA,

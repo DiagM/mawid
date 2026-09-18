@@ -116,6 +116,97 @@ export const fr = {
     notFoundHelp:
       'Ce lien n’est plus valide. Contactez directement le salon.',
   },
+
+  pro: {
+    title: 'Espace gérant',
+    login: 'Connexion',
+    loginSubtitle: 'Accédez à l’agenda de votre salon.',
+    phone: 'Téléphone',
+    password: 'Mot de passe',
+    signIn: 'Se connecter',
+    signingIn: 'Connexion…',
+    signOut: 'Déconnexion',
+    invalidCredentials: 'Identifiants invalides',
+    tooManyAttempts:
+      'Trop de tentatives. Patientez quelques minutes avant de réessayer.',
+
+    changePassword: 'Changer mon mot de passe',
+    changePasswordForced: 'Choisissez votre mot de passe',
+    changePasswordForcedHelp:
+      'Votre mot de passe actuel a été généré pour vous. Remplacez-le avant de continuer.',
+    currentPassword: 'Mot de passe actuel',
+    newPassword: 'Nouveau mot de passe',
+    newPasswordHelp: '10 caractères minimum, avec au moins une lettre et un chiffre.',
+    passwordChanged: 'Mot de passe mis à jour',
+    save: 'Enregistrer',
+    saving: 'Enregistrement…',
+    saved: 'Enregistré',
+
+    nav: {
+      agenda: 'Agenda',
+      salon: 'Mon salon',
+      prestations: 'Prestations',
+      blocked: 'Indisponibilités',
+    },
+
+    agenda: {
+      title: 'Agenda',
+      today: "Aujourd'hui",
+      previousDay: 'Jour précédent',
+      nextDay: 'Jour suivant',
+      empty: 'Aucun rendez-vous ce jour-là.',
+      markHonored: 'Honoré',
+      markNoShow: 'Non présenté',
+      markCanceled: 'Annuler',
+      callClient: 'Appeler',
+      revenue: 'Total du jour',
+      revenueHelp: 'Rendez-vous honorés uniquement.',
+    },
+
+    salon: {
+      title: 'Mon salon',
+      publicLink: 'Lien public',
+      name: 'Nom du salon',
+      description: 'Description',
+      addressLine: 'Adresse',
+      district: 'Quartier',
+      hours: 'Horaires',
+      openLabel: 'Ouvert',
+      closedLabel: 'Fermé',
+      from: 'de',
+      to: 'à',
+      invalidHours: 'L’heure de fermeture doit suivre l’heure d’ouverture.',
+    },
+
+    prestations: {
+      title: 'Prestations',
+      add: 'Ajouter une prestation',
+      name: 'Nom',
+      description: 'Description',
+      duration: 'Durée (minutes)',
+      price: 'Prix (DA)',
+      archived: 'Archivée',
+      archive: 'Archiver',
+      restore: 'Réactiver',
+      empty: 'Aucune prestation. Ajoutez-en une pour ouvrir les réservations.',
+      archiveHelp:
+        'Archiver retire la prestation du public sans toucher à l’historique des rendez-vous.',
+    },
+
+    blocked: {
+      title: 'Indisponibilités',
+      add: 'Bloquer un créneau',
+      date: 'Date',
+      start: 'Début',
+      end: 'Fin',
+      reason: 'Motif (optionnel)',
+      reasonPlaceholder: 'Pause déjeuner',
+      remove: 'Supprimer',
+      empty: 'Aucune indisponibilité à venir.',
+      help:
+        'Un créneau bloqué disparaît immédiatement des disponibilités proposées aux clients.',
+    },
+  },
 } as const;
 
 export type WeekdayKey = keyof typeof fr.weekdays;
