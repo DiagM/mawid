@@ -26,6 +26,18 @@ export const fr = {
     networkError: 'Connexion impossible. Vérifiez votre réseau.',
   },
 
+  search: {
+    title: 'Trouver un salon',
+    placeholder: 'Coupe, barbe, quartier…',
+    submit: 'Rechercher',
+    womenOnly: 'Salons 100 % féminin',
+    results: 'salon',
+    resultsPlural: 'salons',
+    empty: 'Aucun salon ne correspond à votre recherche.',
+    emptyHelp: 'Essayez un autre mot, ou retirez le filtre.',
+    from: 'à partir de',
+  },
+
   salon: {
     closed: 'Fermé',
     openingHours: "Horaires d'ouverture",

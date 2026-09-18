@@ -180,6 +180,50 @@ export interface ReservationView {
 // Routes publiques
 // ============================================
 
+export interface SalonSearchItem {
+  slug: string;
+  name: string;
+  district: string;
+  city: string;
+  isWomenOnly: boolean;
+  photo: string | null;
+  fromPriceCents: number | null;
+}
+
+export interface SalonSearchResult {
+  total: number;
+  limit: number;
+  offset: number;
+  items: SalonSearchItem[];
+}
+
+export interface SearchFilters {
+  city?: string;
+  q?: string;
+  womenOnly?: boolean;
+}
+
+export function searchSalons(
+  filters: SearchFilters,
+): Promise<SalonSearchResult> {
+  const query = new URLSearchParams();
+  if (filters.city) query.set('city', filters.city);
+  if (filters.q) query.set('q', filters.q);
+  if (filters.womenOnly) query.set('womenOnly', 'true');
+
+  const suffix = query.toString() ? `?${query.toString()}` : '';
+  return apiFetch<SalonSearchResult>(`/salons${suffix}`);
+}
+
+export interface SitemapEntry {
+  slug: string;
+  updatedAt: string;
+}
+
+export function getSalonSitemap(): Promise<SitemapEntry[]> {
+  return apiFetch<SitemapEntry[]>('/salons/sitemap');
+}
+
 export function getPublicSalon(slug: string): Promise<PublicSalon> {
   return apiFetch<PublicSalon>(`/salons/${encodeURIComponent(slug)}`);
 }

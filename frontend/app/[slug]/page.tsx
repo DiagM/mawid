@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { ApiError, getPublicSalon, type PublicSalon } from '@/lib/api';
 import { fr, type WeekdayKey } from '@/lib/i18n/fr';
 import { formatDuration, formatPhone, formatPrice } from '@/lib/format';
+import { salonJsonLd, serializeJsonLd } from '@/lib/json-ld';
+import { siteUrl } from '@/lib/site-url';
 
 /** Ordre d'affichage : semaine algérienne, qui commence le dimanche. */
 const WEEK_ORDER: WeekdayKey[] = [
@@ -45,6 +47,7 @@ export async function generateMetadata({
       description:
         salon.description ??
         `Réservez chez ${salon.name}, ${salon.district} — ${salon.city}.`,
+      alternates: { canonical: `${siteUrl()}/${slug}` },
       openGraph: {
         title: salon.name,
         description: `${salon.district}, ${salon.city}`,
@@ -62,8 +65,22 @@ export default async function SalonPage({ params }: PageProps) {
   const { slug } = await params;
   const salon = await loadSalon(slug);
 
+  const canonical = `${siteUrl()}/${salon.slug}`;
+
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-24 pt-6">
+      {/*
+        Données structurées : c'est ce qui fait remonter adresse, horaires et
+        fourchette de prix dans les résultats Google. Pour un salon sans site
+        web, c'est son seul référencement.
+      */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd(salonJsonLd(salon, canonical)),
+        }}
+      />
+
       <header className="mb-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>

@@ -99,14 +99,17 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Création de compte gérant (`npm run create-manager`) | ✅ Fait — pas de route publique, cf. §3.4 |
 | Changement de mot de passe (`PATCH /api/auth/password`) | ✅ Fait — forcé au premier login |
 | Rate limiting, Helmet, CORS par env | ✅ Fait |
-| Recherche de salons (ville, prestation, filtre féminin) | ❌ À faire (lot 4) |
+| Recherche de salons (`GET /api/salons`, `?city`, `?q`, `?womenOnly`) | ✅ Fait |
+| Sitemap (`GET /api/salons/sitemap`) | ✅ Fait |
 | Tests | 🟡 51 tests unitaires lancés en CI. Pas encore de suite d'intégration automatisée sur base réelle (l'isolation A/B a été vérifiée manuellement sur deux salons). |
 
 ### Frontend
 
 | Écran | État |
 | --- | --- |
-| Accueil | ✅ Minimal — la recherche arrive au lot 4 |
+| Accueil et recherche | ✅ Fait — formulaire en GET, URL partageable |
+| SEO (`sitemap.xml`, `robots.txt`, JSON-LD) | ✅ Fait |
+| PWA (manifeste) | ✅ Fait — sans service worker, cf. lot 4 |
 | Fiche salon publique `/[slug]` | ✅ Fait |
 | Tunnel de réservation `/[slug]/reserver` | ✅ Fait — 3 étapes, mobile-first |
 | Confirmation (wa.me + `.ics` + lien de gestion) | ✅ Fait |
@@ -178,9 +181,23 @@ Isolation vérifiée sur l'interface réelle avec deux salons : le gérant A ne
 voit ni les prestations, ni le salon, ni l'agenda du salon B, et
 réciproquement. Le JWT n'apparaît dans aucune page servie.
 
-**Lot 4 — Complément V1 du business plan.** Recherche ville/prestation +
-filtre 100 % féminin, SEO (metadata, sitemap, JSON-LD `LocalBusiness`), PWA,
-onboarding self-service avec activation manuelle.
+**Lot 4 — Complément V1 du business plan.** 🟡 Partiellement livré le
+2026-09-18 : recherche (ville, texte libre sur salon/quartier/prestation,
+filtre 100 % féminin), `sitemap.xml`, `robots.txt`, données structurées
+`HealthAndBeautyBusiness`, manifeste PWA.
+
+Pas de service worker volontairement : un cache hors ligne sur des créneaux de
+réservation afficherait des disponibilités périmées, ce qui est pire qu'une
+page qui ne charge pas.
+
+Reste à faire : **onboarding self-service** avec activation manuelle
+(`isActive = false` à la création).
+
+Bug rattrapé au passage : `contactPhone` et `isWomenOnly`, ajoutés au schéma au
+lot 0, n'avaient jamais été ajoutés au `select` de la fiche publique. Le lien
+téléphone, le badge « 100 % féminin » et le `telephone` des données
+structurées étaient donc vides — et le repli `wa.me` de l'écran de
+confirmation aurait été cassé. Deux tests verrouillent désormais ce `select`.
 
 **Lot 5 — V2.** Multi-employés exposé dans l'UI (le moteur le supporte déjà),
 avis clients (uniquement sur une réservation `HONORED`, pour couper court à

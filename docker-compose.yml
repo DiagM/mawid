@@ -77,6 +77,8 @@ services:
       # Utilisée par le SERVEUR Next (composants serveur) : réseau Docker
       # interne, où "localhost" désignerait le conteneur frontend lui-même.
       BACKEND_INTERNAL_URL: http://backend:3001/api
+      # URL publique canonique (sitemap, robots.txt, Open Graph).
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
       NODE_ENV: development
       # Décommente si le Fast Refresh ne fonctionne pas (Windows/Mac récalcitrants)
       # WATCHPACK_POLLING: "true"

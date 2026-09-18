@@ -1,6 +1,15 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { SalonsService } from './salons.service';
 import { UpdateSalonDto } from './dto/update-salon.dto';
+import { SearchSalonsDto } from './dto/search-salons.dto';
 import { PrestationsService } from '../prestations/prestations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -44,6 +53,26 @@ export class SalonsController {
   // ============================================
   // Routes publiques (clients finaux)
   // ============================================
+
+  /**
+   * GET /api/salons?city=Alger&q=barbe&womenOnly=true
+   * Recherche publique. Déclarée avant /:slug par lisibilité ; aucun conflit
+   * de routing possible, la racine de collection n'a pas de segment.
+   */
+  @Get()
+  search(@Query() query: SearchSalonsDto) {
+    return this.salonsService.search(query);
+  }
+
+  /**
+   * GET /api/salons/sitemap
+   * Slugs des salons actifs, pour la génération du sitemap côté frontend.
+   * Déclarée AVANT /:slug, sinon "sitemap" serait interprété comme un slug.
+   */
+  @Get('sitemap')
+  sitemap() {
+    return this.salonsService.findActiveSlugs();
+  }
 
   /**
    * GET /api/salons/:slug

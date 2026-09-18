@@ -2,10 +2,104 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateSalonDto } from './dto/update-salon.dto';
+import { SearchSalonsDto } from './dto/search-salons.dto';
 
 @Injectable()
 export class SalonsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Recherche publique de salons.
+   *
+   * Ne renvoie que des salons actifs : un salon désactivé, ou créé par
+   * onboarding self-service et pas encore validé, ne doit apparaître nulle
+   * part (docs/MVP_SCOPE.md §3.4).
+   *
+   * Le `select` est explicite et volontairement réduit : cette route est
+   * publique, elle ne doit jamais laisser filtrer `ownerId` ni quoi que ce
+   * soit d'interne (docs/SECURITY.md §3).
+   */
+  async search(dto: SearchSalonsDto) {
+    const limit = dto.limit ?? 20;
+    const offset = dto.offset ?? 0;
+    const query = dto.q?.trim();
+
+    const where: Prisma.SalonWhereInput = {
+      isActive: true,
+      ...(dto.city && { city: dto.city }),
+      ...(dto.womenOnly && { isWomenOnly: true }),
+      ...(query && {
+        // On cherche aussi dans les prestations : un client tape « barbe »
+        // bien plus souvent que le nom d'un salon qu'il ne connaît pas encore.
+        OR: [
+          { name: { contains: query, mode: 'insensitive' } },
+          { district: { contains: query, mode: 'insensitive' } },
+          {
+            prestations: {
+              some: {
+                isActive: true,
+                name: { contains: query, mode: 'insensitive' },
+              },
+            },
+          },
+        ],
+      }),
+    };
+
+    const [salons, total] = await Promise.all([
+      this.prisma.salon.findMany({
+        where,
+        orderBy: [{ name: 'asc' }],
+        take: limit,
+        skip: offset,
+        select: {
+          slug: true,
+          name: true,
+          district: true,
+          city: true,
+          isWomenOnly: true,
+          photos: true,
+          prestations: {
+            where: { isActive: true },
+            orderBy: { priceCents: 'asc' },
+            take: 1,
+            select: { priceCents: true },
+          },
+        },
+      }),
+      this.prisma.salon.count({ where }),
+    ]);
+
+    return {
+      total,
+      limit,
+      offset,
+      items: salons.map((salon) => ({
+        slug: salon.slug,
+        name: salon.name,
+        district: salon.district,
+        city: salon.city,
+        isWomenOnly: salon.isWomenOnly,
+        photo: salon.photos[0] ?? null,
+        // « À partir de » : le prix d'appel est ce qui fait cliquer, et il
+        // évite d'afficher un catalogue complet dans une liste de résultats.
+        fromPriceCents: salon.prestations[0]?.priceCents ?? null,
+      })),
+    };
+  }
+
+  /**
+   * Liste des slugs actifs, pour le sitemap.
+   * Requête volontairement minimale : elle peut être appelée à chaque
+   * génération de sitemap.
+   */
+  findActiveSlugs() {
+    return this.prisma.salon.findMany({
+      where: { isActive: true },
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
 
   /**
    * Récupère un salon par son slug pour l'affichage public (fiche salon).
@@ -28,6 +122,11 @@ export class SalonsService {
         openingHours: true,
         photos: true,
         isActive: true,
+        // Numéro WhatsApp public : c'est lui qui porte tout le parcours de
+        // confirmation côté client (lien wa.me) et les données structurées
+        // de la fiche. Sans lui, la stratégie de notification tombe.
+        contactPhone: true,
+        isWomenOnly: true,
         prestations: {
           where: { isActive: true },
           orderBy: { displayOrder: 'asc' },
