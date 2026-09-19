@@ -4,7 +4,9 @@ import {
   ArrayMinSize,
   ArrayUnique,
   IsArray,
+  IsOptional,
   IsString,
+  Length,
   Matches,
 } from 'class-validator';
 
@@ -40,4 +42,14 @@ export class AvailabilityQueryDto {
   @ArrayUnique()
   @IsString({ each: true })
   prestationIds!: string[];
+
+  /**
+   * Membre de l'équipe souhaité (V2). Omis : le moteur propose les créneaux
+   * où AU MOINS une ressource est libre, ce qui est le comportement V1 et
+   * reste le plus courant — la plupart des clients n'ont pas de préférence.
+   */
+  @IsOptional()
+  @IsString()
+  @Length(1, 40)
+  employeeId?: string;
 }

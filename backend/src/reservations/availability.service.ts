@@ -161,6 +161,7 @@ export class AvailabilityService {
     date: string,
     prestationIds: string[],
     now: Date = new Date(),
+    employeeId?: string,
   ): Promise<AvailabilityResult> {
     const context = await this.resolveContext(slug, prestationIds);
     this.assertDateWithinHorizon(date, now);
@@ -171,6 +172,7 @@ export class AvailabilityService {
       date,
       context.totalDurationMinutes,
       now,
+      employeeId,
     );
 
     return {
@@ -194,6 +196,7 @@ export class AvailabilityService {
     context: ResolvedBookingContext,
     startsAt: Date,
     now: Date = new Date(),
+    employeeId?: string,
   ): Promise<string | null> {
     const date = utcToLocalDate(startsAt);
     this.assertDateWithinHorizon(date, now);
@@ -232,7 +235,7 @@ export class AvailabilityService {
       );
     }
 
-    const resources = await this.loadResources(context.salonId);
+    const resources = await this.loadResources(context.salonId, employeeId);
     const busy = await this.loadBusyIntervals(context.salonId, date);
 
     const free = resources.find((resource) =>
@@ -256,6 +259,7 @@ export class AvailabilityService {
     date: string,
     durationMinutes: number,
     now: Date,
+    employeeId?: string,
   ): Promise<Date[]> {
     const window = this.openingWindow(openingHours, date);
     if (!window) {
@@ -263,7 +267,7 @@ export class AvailabilityService {
     }
 
     const rules = getBookingRules();
-    const resources = await this.loadResources(salonId);
+    const resources = await this.loadResources(salonId, employeeId);
     const busy = await this.loadBusyIntervals(salonId, date);
     const earliestStart = new Date(
       now.getTime() + rules.minLeadMinutes * 60_000,
@@ -303,19 +307,30 @@ export class AvailabilityService {
    * d'`Employee`. On retombe alors sur la ressource implicite `null`, qui
    * correspond à la contrainte d'exclusion Postgres actuelle (clé `salonId`).
    *
-   * ⚠️ Activer le multi-employés (V2) suppose de migrer cette contrainte vers
-   * `COALESCE("employeeId", "salonId")` AVANT d'exposer la moindre route de
-   * création d'employé — sinon la base refuserait deux employés sur le même
-   * créneau. Voir `docs/DATABASE.md` §6.3.
+   * La contrainte d'exclusion porte désormais sur
+   * `COALESCE("employeeId", "salonId")` (migration `employee_scoped_overlap`) :
+   * deux employés peuvent travailler au même instant, le même employé non.
    */
-  private async loadResources(salonId: string): Promise<Resource[]> {
+  private async loadResources(
+    salonId: string,
+    employeeId?: string,
+  ): Promise<Resource[]> {
     const employees = await this.prisma.employee.findMany({
-      where: { salonId, isActive: true },
+      // `employeeId` restreint au membre demandé par le client. Le filtre
+      // `salonId` reste appliqué : un identifiant appartenant à un autre salon
+      // ne renvoie rien, plutôt que d'exposer les disponibilités d'un tiers.
+      where: { salonId, isActive: true, ...(employeeId && { id: employeeId }) },
       select: { id: true, workingHours: true },
       orderBy: { displayOrder: 'asc' },
     });
 
     if (employees.length === 0) {
+      // Un employeeId demandé mais introuvable ne doit PAS retomber sur la
+      // ressource implicite : cela proposerait des créneaux au nom de
+      // quelqu'un qui n'existe pas dans ce salon.
+      if (employeeId) {
+        throw new NotFoundException('Membre introuvable pour ce salon');
+      }
       return [{ id: null, workingHours: null }];
     }
 

@@ -10,6 +10,7 @@ import { SalonsModule } from './salons/salons.module';
 import { PrestationsModule } from './prestations/prestations.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { BlockedSlotsModule } from './blocked-slots/blocked-slots.module';
+import { EmployeesModule } from './employees/employees.module';
 import { getThrottlerOptions } from './common/throttling/throttle-config';
 
 @Module({
@@ -22,6 +23,7 @@ import { getThrottlerOptions } from './common/throttling/throttle-config';
     SalonsModule,
     ReservationsModule,
     BlockedSlotsModule,
+    EmployeesModule,
   ],
   controllers: [AppController],
   providers: [

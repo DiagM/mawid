@@ -37,6 +37,16 @@ export class CreateReservationDto {
   @IsString({ each: true })
   prestationIds!: string[];
 
+  /**
+   * Membre de l'équipe souhaité (V2). Omis : le moteur choisit lui-même une
+   * ressource libre. Toujours revalidé côté serveur — un identifiant
+   * appartenant à un autre salon est refusé.
+   */
+  @IsOptional()
+  @IsString()
+  @Length(1, 40)
+  employeeId?: string;
+
   @IsString()
   @Length(2, 50)
   clientFirstName!: string;

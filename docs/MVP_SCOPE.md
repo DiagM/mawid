@@ -216,9 +216,14 @@ téléphone, le badge « 100 % féminin » et le `telephone` des données
 structurées étaient donc vides — et le repli `wa.me` de l'écran de
 confirmation aurait été cassé. Deux tests verrouillent désormais ce `select`.
 
-**Lot 5 — V2.** Multi-employés exposé dans l'UI (le moteur le supporte déjà),
-avis clients (uniquement sur une réservation `HONORED`, pour couper court à
-l'abus redouté dans le business plan), statistiques, parrainage.
+**Lot 5 — V2.** 🟡 En cours. Multi-employés backend livré le 2026-09-19 :
+migration de la contrainte d'exclusion vers `COALESCE(employeeId, salonId)`,
+CRUD `/api/employees`, moteur de disponibilité par employé, choix du membre
+côté client, équipe exposée sur la fiche publique.
+
+Reste : interface du back-office pour l'équipe, avis clients (uniquement sur
+une réservation `HONORED`, pour couper court à l'abus redouté dans le business
+plan), statistiques, parrainage.
 
 **Lot 6 — V3.** Plans et quotas (Free 30 RDV/mois, Pro, Pro+), fiches
 clients, campagnes `wa.me` manuelles, mise en avant.

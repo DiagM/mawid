@@ -34,6 +34,8 @@ export class PublicBookingController {
       slug,
       query.date,
       query.prestationIds,
+      new Date(),
+      query.employeeId,
     );
   }
 

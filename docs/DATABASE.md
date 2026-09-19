@@ -195,9 +195,28 @@ Trois détails qui ne s'inventent pas :
 Le filtre `WHERE (status = 'CONFIRMED')` est ce qui fait qu'une annulation
 libère réellement le créneau.
 
-Quand `Employee` sera exploité, la clé d'exclusion devra passer de `"salonId"`
-à `COALESCE("employeeId", "salonId")` pour autoriser deux employés sur le même
-créneau — d'où l'intérêt d'avoir la colonne dès le départ.
+**Fait le 2026-09-19** (migration `employee_scoped_overlap`) : la clé est
+passée de `"salonId"` à `COALESCE("employeeId", "salonId")`, ce qui autorise
+deux employés sur le même créneau sans rien relâcher pour un employé donné.
+
+```sql
+EXCLUDE USING gist (
+  (COALESCE("employeeId", "salonId")) WITH =,
+  tsrange("startsAt", "endsAt", '[)') WITH &&
+) WHERE ("status" = 'CONFIRMED')
+```
+
+Vérifié en base : deux employés au même instant passent, le même employé en
+chevauchement est rejeté, et un salon sans équipe garde exactement le
+comportement V1.
+
+⚠️ **État mixte à éviter.** Un salon ayant à la fois des réservations sans
+employé et des réservations assignées échapperait à la contrainte : les deux
+clés diffèrent, donc aucun conflit détecté, et deux clients se présenteraient
+au même moment. C'est pourquoi la création du **premier** employé réassigne
+les rendez-vous à venir (`EmployeesService#create`). Les rendez-vous passés
+gardent `null` : réécrire l'historique fausserait les statistiques par
+employé.
 
 Toute écriture de réservation doit intercepter le code d'erreur Postgres
 `23P01` (`exclusion_violation`) et le traduire en **409 Conflict**, jamais

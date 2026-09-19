@@ -249,6 +249,95 @@ describe('AvailabilityService', () => {
     });
   });
 
+  describe('multi-employés (V2)', () => {
+    const TEAM = [
+      { id: 'emp-1', workingHours: null },
+      { id: 'emp-2', workingHours: null },
+    ];
+
+    it('propose un créneau tant qu’un membre au moins est libre', async () => {
+      prisma.employee.findMany.mockResolvedValue(TEAM);
+      // emp-1 occupé de 10:00 à 10:30 locale ; emp-2 libre.
+      prisma.reservation.findMany.mockResolvedValue([
+        {
+          startsAt: new Date('2026-10-05T09:00:00.000Z'),
+          endsAt: new Date('2026-10-05T09:30:00.000Z'),
+          employeeId: 'emp-1',
+        },
+      ]);
+
+      expect(await times()).toContain('10:00');
+    });
+
+    it('retire le créneau quand TOUS les membres sont pris', async () => {
+      prisma.employee.findMany.mockResolvedValue(TEAM);
+      prisma.reservation.findMany.mockResolvedValue([
+        {
+          startsAt: new Date('2026-10-05T09:00:00.000Z'),
+          endsAt: new Date('2026-10-05T09:30:00.000Z'),
+          employeeId: 'emp-1',
+        },
+        {
+          startsAt: new Date('2026-10-05T09:00:00.000Z'),
+          endsAt: new Date('2026-10-05T09:30:00.000Z'),
+          employeeId: 'emp-2',
+        },
+      ]);
+
+      expect(await times()).not.toContain('10:00');
+    });
+
+    it('restreint au membre demandé par le client', async () => {
+      prisma.employee.findMany.mockResolvedValue([TEAM[0]]);
+
+      await service.getAvailability('salon-a', DATE, ['p-coupe'], NOW, 'emp-1');
+
+      const query = firstArg<{
+        where: { salonId: string; isActive: boolean; id?: string };
+      }>(prisma.employee.findMany);
+      expect(query.where.id).toBe('emp-1');
+      // Le filtre salonId reste appliqué : un identifiant appartenant à un
+      // autre salon ne doit pas exposer ses disponibilités.
+      expect(query.where.salonId).toBe(SALON_A);
+    });
+
+    it('refuse un membre introuvable plutôt que de retomber sur le salon', async () => {
+      // Retomber sur la ressource implicite proposerait des créneaux au nom
+      // de quelqu'un qui n'existe pas dans ce salon.
+      prisma.employee.findMany.mockResolvedValue([]);
+
+      await expect(
+        service.getAvailability('salon-a', DATE, ['p-coupe'], NOW, 'emp-x'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('ignore les blocages visant un autre membre', async () => {
+      prisma.employee.findMany.mockResolvedValue([TEAM[0]]);
+      prisma.blockedSlot.findMany.mockResolvedValue([
+        {
+          startsAt: new Date('2026-10-05T11:00:00.000Z'),
+          endsAt: new Date('2026-10-05T12:00:00.000Z'),
+          employeeId: 'emp-2',
+        },
+      ]);
+
+      expect(await times()).toContain('12:00');
+    });
+
+    it('applique un blocage visant tout le salon à chaque membre', async () => {
+      prisma.employee.findMany.mockResolvedValue(TEAM);
+      prisma.blockedSlot.findMany.mockResolvedValue([
+        {
+          startsAt: new Date('2026-10-05T11:00:00.000Z'),
+          endsAt: new Date('2026-10-05T12:00:00.000Z'),
+          employeeId: null,
+        },
+      ]);
+
+      expect(await times()).not.toContain('12:00');
+    });
+  });
+
   describe('resolveResourceForSlot', () => {
     const context = {
       salonId: SALON_A,

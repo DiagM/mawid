@@ -88,6 +88,8 @@ export class ReservationsService {
     const employeeId = await this.availability.resolveResourceForSlot(
       context,
       startsAt,
+      new Date(),
+      dto.employeeId,
     );
     const endsAt = addMinutes(startsAt, context.totalDurationMinutes);
 

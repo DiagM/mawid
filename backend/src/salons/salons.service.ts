@@ -156,6 +156,14 @@ export class SalonsService {
         // de la fiche. Sans lui, la stratégie de notification tombe.
         contactPhone: true,
         isWomenOnly: true,
+        // Équipe active (V2) : le client peut choisir avec qui il réserve.
+        // Vide tant que le salon n'a pas d'employés — le parcours reste alors
+        // exactement celui de la V1.
+        employees: {
+          where: { isActive: true },
+          orderBy: { displayOrder: 'asc' },
+          select: { id: true, fullName: true },
+        },
         prestations: {
           where: { isActive: true },
           orderBy: { displayOrder: 'asc' },
