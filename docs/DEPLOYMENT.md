@@ -20,6 +20,16 @@ docker compose up -d
   (`npm run start:dev`).
 - `frontend` : Next.js, port `3000`, hot-reload via volume monté.
 
+**Piège du port 3000 déjà occupé** : si un autre serveur Node tourne sur le
+port 3000 de la machine hôte, il « gagne » sur la publication de port Docker
+et c'est *lui* que `http://localhost:3000` sert — le symptôme est déroutant
+(404 sur des routes qui existent, pages d'une autre application). Pour
+contourner sans arrêter l'autre service, tester depuis le réseau Docker :
+
+```bash
+docker exec mawid-backend wget -q -S -O /dev/null http://frontend:3000/pro
+```
+
 **Piège du build frontend en conteneur** : le service `frontend` tourne avec
 `NODE_ENV=development`, ce qu'il faut pour le hot-reload. Mais lancer
 `npm run build` dans ce conteneur sans surcharger la variable fait échouer la

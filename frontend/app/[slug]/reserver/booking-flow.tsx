@@ -42,6 +42,13 @@ export function BookingFlow({
   const [slots, setSlots] = useState<AvailableSlot[] | null>(null);
   const [slotsError, setSlotsError] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  /**
+   * Membre souhaité. `null` = « peu importe », le serveur choisit alors la
+   * première ressource libre. C'est le cas par défaut et le plus courant :
+   * la plupart des clients n'ont pas de préférence.
+   */
+  const [employeeId, setEmployeeId] = useState<string | null>(null);
+  const hasTeam = salon.employees.length > 0;
 
   const [firstName, setFirstName] = useState('');
   const [phone, setPhone] = useState('');
@@ -79,7 +86,7 @@ export function BookingFlow({
    * pas encore applique au moment de l'appel.
    */
   const loadSlots = useCallback(
-    async (targetDate: string, ids: string[]) => {
+    async (targetDate: string, ids: string[], withEmployee?: string | null) => {
       if (ids.length === 0) {
         return;
       }
@@ -89,7 +96,12 @@ export function BookingFlow({
       setSelectedSlot(null);
 
       try {
-        const availability = await getAvailability(salon.slug, targetDate, ids);
+        const availability = await getAvailability(
+          salon.slug,
+          targetDate,
+          ids,
+          withEmployee ?? undefined,
+        );
         setSlots(availability.slots);
       } catch (error) {
         setSlots([]);
@@ -105,12 +117,18 @@ export function BookingFlow({
 
   function goToSlots() {
     setStep('slot');
-    void loadSlots(date, selectedIds);
+    void loadSlots(date, selectedIds, employeeId);
   }
 
   function selectDate(day: string) {
     setDate(day);
-    void loadSlots(day, selectedIds);
+    void loadSlots(day, selectedIds, employeeId);
+  }
+
+  /** Changer de membre recalcule immédiatement les créneaux affichés. */
+  function selectEmployee(id: string | null) {
+    setEmployeeId(id);
+    void loadSlots(date, selectedIds, id);
   }
 
   function toggleService(id: string) {
@@ -150,6 +168,7 @@ export function BookingFlow({
       const created = await createReservation(salon.slug, {
         startsAt: selectedSlot,
         prestationIds: selectedIds,
+        ...(employeeId && { employeeId }),
         clientFirstName: firstName.trim(),
         clientPhone: e164,
         website,
@@ -161,7 +180,7 @@ export function BookingFlow({
         // on renvoie au choix du créneau avec une liste rafraîchie.
         setFormError(fr.booking.slotTaken);
         setStep('slot');
-        void loadSlots(date, selectedIds);
+        void loadSlots(date, selectedIds, employeeId);
       } else if (error instanceof ApiError && error.status === 0) {
         setFormError(fr.common.networkError);
       } else {
@@ -236,6 +255,51 @@ export function BookingFlow({
           <h2 id="etape-creneau" className="mb-1 text-lg font-semibold">
             {fr.booking.stepSlot}
           </h2>
+          {hasTeam && (
+            <div className="mb-5">
+              <p className="mb-2 text-sm font-medium">
+                {fr.booking.stepEmployee}
+              </p>
+              <div className="-mx-4 overflow-x-auto px-4">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => selectEmployee(null)}
+                    aria-pressed={employeeId === null}
+                    className={`shrink-0 rounded-xl border px-4 py-2 text-sm transition-colors ${
+                      employeeId === null
+                        ? 'border-accent bg-accent text-white'
+                        : 'border-border bg-surface'
+                    }`}
+                  >
+                    {fr.booking.anyEmployee}
+                  </button>
+
+                  {salon.employees.map((employee) => (
+                    <button
+                      key={employee.id}
+                      type="button"
+                      onClick={() => selectEmployee(employee.id)}
+                      aria-pressed={employeeId === employee.id}
+                      className={`shrink-0 rounded-xl border px-4 py-2 text-sm transition-colors ${
+                        employeeId === employee.id
+                          ? 'border-accent bg-accent text-white'
+                          : 'border-border bg-surface'
+                      }`}
+                    >
+                      {employee.fullName}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {employeeId === null && (
+                <p className="mt-2 text-sm text-muted">
+                  {fr.booking.anyEmployeeHelp}
+                </p>
+              )}
+            </div>
+          )}
+
           <p className="mb-4 text-sm text-muted">{fr.booking.chooseDay}</p>
 
           <div className="-mx-4 mb-5 overflow-x-auto px-4">

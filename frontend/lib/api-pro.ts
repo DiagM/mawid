@@ -171,6 +171,52 @@ export function archivePrestation(token: string, id: string): Promise<void> {
 }
 
 // ============================================
+// Équipe (V2)
+// ============================================
+
+export interface ManagedEmployee {
+  id: string;
+  fullName: string;
+  isActive: boolean;
+  displayOrder: number;
+  workingHours: OpeningHours | null;
+}
+
+export function getMyEmployees(token: string): Promise<ManagedEmployee[]> {
+  return apiFetch<ManagedEmployee[]>('/employees', { token });
+}
+
+export function createEmployee(
+  token: string,
+  input: { fullName: string; displayOrder?: number },
+): Promise<ManagedEmployee> {
+  return apiFetch<ManagedEmployee>('/employees', {
+    method: 'POST',
+    token,
+    body: input,
+  });
+}
+
+export function updateEmployee(
+  token: string,
+  id: string,
+  input: { fullName?: string; isActive?: boolean; displayOrder?: number },
+): Promise<ManagedEmployee> {
+  return apiFetch<ManagedEmployee>(`/employees/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    token,
+    body: input,
+  });
+}
+
+export function archiveEmployee(token: string, id: string): Promise<void> {
+  return apiFetch<void>(`/employees/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+// ============================================
 // Agenda
 // ============================================
 

@@ -65,6 +65,7 @@ export default async function ProLayout({
               <NavLink href="/pro" label={fr.pro.nav.agenda} />
               <NavLink href="/pro/salon" label={fr.pro.nav.salon} />
               <NavLink href="/pro/prestations" label={fr.pro.nav.prestations} />
+              <NavLink href="/pro/equipe" label={fr.pro.nav.team} />
               <NavLink
                 href="/pro/indisponibilites"
                 label={fr.pro.nav.blocked}

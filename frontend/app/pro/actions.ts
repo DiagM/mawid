@@ -251,6 +251,66 @@ export async function restorePrestationAction(
 }
 
 // ============================================
+// Équipe
+// ============================================
+
+export async function createEmployeeAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const token = await requireSessionToken();
+  const fullName = String(formData.get('fullName') ?? '').trim();
+
+  if (fullName.length < 2) {
+    return { error: fr.common.error };
+  }
+
+  try {
+    await pro.createEmployee(token, { fullName });
+  } catch (error) {
+    return { error: toMessage(error, fr.common.error) };
+  }
+
+  revalidatePath('/pro/equipe');
+  return { success: fr.pro.saved };
+}
+
+/**
+ * Archivage d'un membre.
+ *
+ * Contrairement aux autres actions de liste, celle-ci peut échouer pour une
+ * raison métier légitime — des rendez-vous à venir lui sont encore assignés.
+ * Elle passe donc par `useActionState` pour pouvoir afficher ce refus, au lieu
+ * d'échouer en silence.
+ */
+export async function archiveEmployeeAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const token = await requireSessionToken();
+  const id = String(formData.get('id') ?? '');
+
+  try {
+    await pro.archiveEmployee(token, id);
+  } catch (error) {
+    return { error: toMessage(error, fr.common.error) };
+  }
+
+  revalidatePath('/pro/equipe');
+  return { success: fr.pro.saved };
+}
+
+export async function restoreEmployeeAction(
+  formData: FormData,
+): Promise<void> {
+  const token = await requireSessionToken();
+  const id = String(formData.get('id') ?? '');
+
+  await pro.updateEmployee(token, id, { isActive: true });
+  revalidatePath('/pro/equipe');
+}
+
+// ============================================
 // Agenda
 // ============================================
 

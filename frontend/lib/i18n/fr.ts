@@ -73,6 +73,9 @@ export const fr = {
     duration: 'Durée',
     continue: 'Continuer',
     chooseDay: 'Choisissez un jour',
+    stepEmployee: 'Avec qui ?',
+    anyEmployee: 'Peu importe',
+    anyEmployeeHelp: 'Le premier membre disponible vous recevra.',
     noSlots: 'Aucun créneau disponible ce jour-là.',
     tryAnotherDay: 'Essayez une autre date.',
     loadingSlots: 'Recherche des créneaux…',
@@ -185,7 +188,23 @@ export const fr = {
       agenda: 'Agenda',
       salon: 'Mon salon',
       prestations: 'Prestations',
+      team: 'Équipe',
       blocked: 'Indisponibilités',
+    },
+
+    team: {
+      title: 'Équipe',
+      add: 'Ajouter un membre',
+      fullName: 'Nom du membre',
+      archived: 'Archivé',
+      archive: 'Archiver',
+      restore: 'Réactiver',
+      empty:
+        'Aucun membre. Sans équipe, votre salon accepte un rendez-vous à la fois.',
+      help:
+        'Chaque membre peut recevoir un client en parallèle des autres. Le premier membre ajouté reprend vos rendez-vous à venir.',
+      archiveHelp:
+        'Un membre ne peut être archivé que lorsqu’il n’a plus de rendez-vous à venir.',
     },
 
     agenda: {

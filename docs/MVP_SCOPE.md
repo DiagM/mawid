@@ -123,6 +123,8 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Mon salon `/pro/salon` | ✅ Fait — infos et horaires |
 | Prestations `/pro/prestations` | ✅ Fait — création, archivage, réactivation |
 | Indisponibilités `/pro/indisponibilites` | ✅ Fait |
+| Équipe `/pro/equipe` | ✅ Fait — ajout, archivage, réactivation |
+| Choix du membre dans le tunnel client | ✅ Fait — masqué si le salon n'a pas d'équipe |
 
 ## 5. Ordre de construction
 
@@ -221,9 +223,13 @@ migration de la contrainte d'exclusion vers `COALESCE(employeeId, salonId)`,
 CRUD `/api/employees`, moteur de disponibilité par employé, choix du membre
 côté client, équipe exposée sur la fiche publique.
 
-Reste : interface du back-office pour l'équipe, avis clients (uniquement sur
-une réservation `HONORED`, pour couper court à l'abus redouté dans le business
-plan), statistiques, parrainage.
+Interface livrée le 2026-09-19 : `/pro/equipe` (ajout, archivage,
+réactivation) et sélecteur « Avec qui ? » dans le tunnel client, masqué tant
+que le salon n'a pas d'équipe — le parcours d'un salon solo reste identique
+à la V1.
+
+Reste : avis clients (uniquement sur une réservation `HONORED`, pour couper
+court à l'abus redouté dans le business plan), statistiques, parrainage.
 
 **Lot 6 — V3.** Plans et quotas (Free 30 RDV/mois, Pro, Pro+), fiches
 clients, campagnes `wa.me` manuelles, mise en avant.

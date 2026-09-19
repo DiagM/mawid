@@ -141,7 +141,14 @@ export interface PublicSalon {
   isActive: boolean;
   contactPhone: string;
   isWomenOnly: boolean;
+  /** Équipe active (V2). Vide : le salon n'a pas d'employés, parcours V1. */
+  employees: PublicEmployee[];
   prestations: PublicPrestation[];
+}
+
+export interface PublicEmployee {
+  id: string;
+  fullName: string;
 }
 
 export interface AvailableSlot {
@@ -232,11 +239,15 @@ export function getAvailability(
   slug: string,
   date: string,
   prestationIds: string[],
+  employeeId?: string,
 ): Promise<Availability> {
   const query = new URLSearchParams({
     date,
     prestationIds: prestationIds.join(','),
   });
+  if (employeeId) {
+    query.set('employeeId', employeeId);
+  }
   return apiFetch<Availability>(
     `/salons/${encodeURIComponent(slug)}/availability?${query.toString()}`,
   );
@@ -245,6 +256,8 @@ export function getAvailability(
 export interface CreateReservationInput {
   startsAt: string;
   prestationIds: string[];
+  /** Membre souhaité (V2). Omis : le serveur choisit une ressource libre. */
+  employeeId?: string;
   clientFirstName: string;
   clientPhone: string;
   /** Piège à robots : doit rester vide (voir docs/SECURITY.md §1.1). */
