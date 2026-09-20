@@ -65,6 +65,19 @@ est **Cloudflare Turnstile** (gratuit, sans quota) — non implémenté à ce
 jour, car cela ajoute de la friction et une dépendance externe dans le chemin
 critique pour un problème encore théorique.
 
+Ajouté au lot 8 (2026-09-20) :
+- **`RolesGuard` et rôle ADMIN** : la console `/admin` est protégée par
+  `JwtAuthGuard` puis `RolesGuard`, posés au niveau de la classe du
+  contrôleur pour qu'une route ajoutée plus tard le soit par défaut. Le guard
+  **refuse quand aucun utilisateur n'est présent** sur la requête, et le rôle
+  est relu en base à chaque appel (`JwtStrategy.validate`) plutôt que lu dans
+  le JWT : retirer le rôle ADMIN à un compte coupe son accès immédiatement.
+  Le message de refus est neutre (« Accès refusé ») — annoncer qu'un rôle
+  administrateur est attendu confirmerait l'existence de la console.
+- **Mots de passe générés** (`common/password.ts`) : `crypto.randomBytes`,
+  jamais `Math.random`, alphabet sans caractères ambigus. Affichés une seule
+  fois, jamais relisibles, et le compte est créé avec `mustChangePassword`.
+
 Manquant à ce jour — à considérer comme prioritaire, pas optionnel :
 - **Stockage du throttling en mémoire** : les compteurs repartent à zéro à
   chaque redémarrage, et ne sont pas partagés entre instances. Acceptable sur

@@ -13,36 +13,8 @@ import { RegisterDto } from './dto/register.dto';
 import { JwtPayload } from './types/jwt-payload.type';
 import { uniqueSlug } from '../common/slug';
 import { DEFAULT_CITY } from '../common/cities';
-
-/**
- * Horaires par défaut d'un salon qui vient de s'inscrire : ouvert tous les
- * jours sauf vendredi. Le gérant les ajuste ensuite depuis son back-office.
- * Un salon sans horaires ne proposerait aucun créneau et paraîtrait cassé.
- */
-const DEFAULT_OPENING_HOURS = {
-  monday: { open: '09:00', close: '19:00' },
-  tuesday: { open: '09:00', close: '19:00' },
-  wednesday: { open: '09:00', close: '19:00' },
-  thursday: { open: '09:00', close: '19:00' },
-  friday: null,
-  saturday: { open: '09:00', close: '19:00' },
-  sunday: { open: '09:00', close: '19:00' },
-};
-
-/**
- * Saisie locale → E.164, seul format stocké (CLAUDE.md §3.3).
- * Le DTO a déjà validé la forme ; il ne reste qu'à normaliser le préfixe.
- */
-function toE164(input: string): string {
-  const digits = input.replace(/[\s.\-()]/g, '');
-  const national = /^(?:\+213|00213|0)([5-7]\d{8})$/.exec(digits);
-
-  if (!national) {
-    throw new BadRequestException('Numéro de mobile algérien attendu');
-  }
-
-  return `+213${national[1]}`;
-}
+import { toE164 } from '../common/phone';
+import { DEFAULT_OPENING_HOURS } from '../common/default-opening-hours';
 
 /**
  * Coût bcrypt. 12 plutôt que 10 : le login est désormais limité à 5 essais

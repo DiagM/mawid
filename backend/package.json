@@ -20,7 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "create-manager": "tsx prisma/create-manager.ts",
     "activate-salon": "tsx prisma/activate-salon.ts",
-    "set-plan": "tsx prisma/set-plan.ts"
+    "set-plan": "tsx prisma/set-plan.ts",
+    "create-admin": "tsx prisma/create-admin.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

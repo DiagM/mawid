@@ -89,6 +89,20 @@ export function formatLongDate(date: string): string {
   return DATE_FORMATTER.format(localDateToInstant(date));
 }
 
+/**
+ * Formate un INSTANT ISO complet (`2026-09-20T09:00:00.000Z`), là où
+ * `formatLongDate` attend une date locale `YYYY-MM-DD`.
+ *
+ * Les deux existent parce que l'API renvoie les deux formes : les dates
+ * métier (jour de rendez-vous) en date locale, les horodatages techniques
+ * (dernière connexion, fin d'abonnement) en ISO. Passer l'une à l'autre
+ * produit un `Invalid time value` qui ne se voit qu'à l'exécution, sur une
+ * donnée non nulle — donc rarement en développement.
+ */
+export function formatInstantDate(iso: string): string {
+  return DATE_FORMATTER.format(new Date(iso));
+}
+
 export function formatShortDate(date: string): string {
   return SHORT_DATE_FORMATTER.format(localDateToInstant(date));
 }

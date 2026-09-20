@@ -73,3 +73,48 @@ export async function requireSessionToken(): Promise<string> {
 
   return token;
 }
+
+/**
+ * Jeton de session d'un ADMINISTRATEUR, ou redirection.
+ *
+ * ⚠️ Ce contrôle est un confort d'affichage, pas une barrière : il évite de
+ * présenter une console vide et des erreurs 403 à un gérant qui atteindrait
+ * `/admin` par curiosité. La vraie protection est le `RolesGuard` du backend,
+ * qui relit le rôle en base à chaque requête — retirer le rôle à un compte
+ * coupe son accès immédiatement, sans attendre l'expiration de son jeton.
+ *
+ * Coût assumé : un appel à `/auth/me` par écran d'administration. La console
+ * est utilisée par une seule personne, l'économiser ne vaut pas le risque de
+ * se fier à une valeur mise en cache.
+ */
+export async function requireAdminToken(): Promise<string> {
+  const token = await requireSessionToken();
+
+  const { getMe } = await import('./api-pro');
+
+  try {
+    const user = await getMe(token);
+    if (user.role !== 'ADMIN') {
+      redirect('/pro');
+    }
+    return token;
+  } catch (error) {
+    // `redirect()` lève une erreur de contrôle de flux qu'il ne faut surtout
+    // pas avaler ici, sinon la redirection n'aurait jamais lieu.
+    if (isRedirectError(error)) {
+      throw error;
+    }
+    redirect('/pro/connexion');
+  }
+}
+
+/** Next signale une redirection par une erreur portant ce `digest`. */
+function isRedirectError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'digest' in error &&
+    typeof (error as { digest: unknown }).digest === 'string' &&
+    (error as { digest: string }).digest.startsWith('NEXT_REDIRECT')
+  );
+}

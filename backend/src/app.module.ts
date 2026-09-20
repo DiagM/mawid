@@ -17,6 +17,7 @@ import { ClientsModule } from './clients/clients.module';
 import { CashModule } from './cash/cash.module';
 import { StockModule } from './stock/stock.module';
 import { PaymentsModule } from './payments/payments.module';
+import { AdminModule } from './admin/admin.module';
 import { getThrottlerOptions } from './common/throttling/throttle-config';
 
 @Module({
@@ -36,6 +37,7 @@ import { getThrottlerOptions } from './common/throttling/throttle-config';
     CashModule,
     StockModule,
     PaymentsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [

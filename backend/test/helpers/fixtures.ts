@@ -91,6 +91,38 @@ export async function createSalon(
   };
 }
 
+export interface AdminFixture {
+  userId: string;
+  phone: string;
+  password: string;
+}
+
+/**
+ * Compte administrateur de la plateforme.
+ *
+ * Créé directement en base : il n'existe aucune route pour fabriquer le
+ * premier administrateur, et c'est volontaire — elle devrait être ouverte à
+ * tous, donc à n'importe qui.
+ */
+export async function createAdmin(
+  prisma: PrismaService,
+  phone = '+213555000099',
+): Promise<AdminFixture> {
+  const password = 'motdepasse2026';
+  const passwordHash = await bcrypt.hash(password, 4);
+
+  const user = await prisma.user.create({
+    data: {
+      phone,
+      fullName: 'Fondateur',
+      passwordHash,
+      role: 'ADMIN',
+    },
+  });
+
+  return { userId: user.id, phone, password };
+}
+
 /**
  * Date locale d'un jour à venir, au format `YYYY-MM-DD`.
  *

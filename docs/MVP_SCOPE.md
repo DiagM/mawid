@@ -356,6 +356,38 @@ en direct rendrait l'historique faux sans prévenir. Un mouvement rendant le
 stock négatif est refusé — un stock négatif n'existe pas physiquement, et
 l'accepter masquerait l'erreur de saisie.
 
+**Lot 8 — Console d'administration.** ✅ Livré le 2026-09-20. Validé
+explicitement par le fondateur, hors roadmap du business plan.
+
+**Pourquoi.** Tous les gestes d'exploitation — valider un salon inscrit,
+changer une offre, vendre une mise en avant, dépanner un mot de passe —
+passaient par des scripts en ligne de commande. Acceptable pour trois salons
+ambassadeurs, intenable dès la dixième inscription : c'est ce qui bloquait le
+passage à l'échelle commerciale, pas une fonctionnalité produit.
+
+**Rôle ADMIN.** L'énumération `UserRole` déclarait `ADMIN` depuis le premier
+schéma sans que rien ne l'utilise. `RolesGuard` lui donne enfin un sens.
+Deux choix : refus par défaut quand aucun utilisateur n'est sur la requête —
+oublier `JwtAuthGuard` doit produire un 403, jamais un accès libre — et rôle
+relu **en base** à chaque requête, jamais dans le JWT, pour que retirer le
+rôle coupe l'accès immédiatement.
+
+**L'exception qui confirme la règle.** `AdminService` est le seul service du
+projet à agir hors de tout périmètre de salon. Une erreur d'autorisation n'y
+fuiterait pas les données d'un salon mais celles de **tous**, d'où un test de
+bout en bout qui passe chaque route en revue avec un simple gérant.
+
+**Modération des avis.** `Review.isPublished` existait et n'était exposé nulle
+part : le code affirmait que « le retrait d'un avis abusif relève de la
+plateforme » alors qu'aucune route ne permettait de le faire. On **masque**
+plutôt qu'on supprime — effacer la ligne effacerait la trace de la modération
+et rouvrirait la possibilité de redéposer un avis sur le même rendez-vous,
+puisque l'unicité porte sur `reservationId`.
+
+**Ce qui reste en ligne de commande** : la création du premier administrateur
+(`prisma/create-admin.ts`), et elle y restera. Une route qui créerait le
+premier compte administrateur devrait être ouverte à tous.
+
 ## 6. Hors périmètre, quelle que soit la version
 
 - Application mobile native — le business plan lui-même tranche : « PWA
