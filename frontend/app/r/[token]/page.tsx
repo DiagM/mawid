@@ -6,6 +6,7 @@ import {
 } from '@/lib/api';
 import { fr } from '@/lib/i18n/fr';
 import { ManageReservation } from './manage-reservation';
+import { ReviewForm } from './review-form';
 
 type PageProps = { params: Promise<{ token: string }> };
 
@@ -63,13 +64,32 @@ export default async function ManagePage({ params }: PageProps) {
     );
   }
 
+  const { reservation } = loaded;
+  // Le formulaire n'apparaît que pour un passage réellement honoré et pas
+  // encore noté. Le serveur revérifie ces deux conditions : un POST direct
+  // ne contourne rien.
+  const canReview =
+    reservation.status === 'HONORED' && reservation.hasReview !== true;
+
   return (
     <main className="mx-auto w-full max-w-md px-4 py-8">
       <ManageReservation
-        reservation={loaded.reservation}
+        reservation={reservation}
         token={token}
         isUpcoming={loaded.isUpcoming}
       />
+
+      {canReview && (
+        <div className="mt-6">
+          <ReviewForm token={token} />
+        </div>
+      )}
+
+      {reservation.hasReview === true && (
+        <p className="mt-6 rounded-xl border border-border bg-surface p-4 text-center text-sm text-muted">
+          {fr.review.already}
+        </p>
+      )}
     </main>
   );
 }

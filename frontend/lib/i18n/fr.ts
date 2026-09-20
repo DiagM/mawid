@@ -112,6 +112,28 @@ export const fr = {
       'Gardez ce lien : c’est le seul moyen d’annuler sans appeler le salon.',
   },
 
+  review: {
+    title: 'Votre avis',
+    prompt: 'Comment s’est passé votre rendez-vous ?',
+    ratingLabel: 'Votre note',
+    commentLabel: 'Votre commentaire (optionnel)',
+    commentPlaceholder: 'Accueil, résultat, ambiance…',
+    submit: 'Publier mon avis',
+    submitting: 'Publication…',
+    thanks: 'Merci pour votre avis !',
+    thanksHelp: 'Il aide les autres clients à choisir.',
+    already: 'Vous avez déjà laissé un avis pour ce rendez-vous.',
+    notYet:
+      'Vous pourrez laisser un avis une fois votre rendez-vous passé et confirmé par le salon.',
+    stars: 'étoiles',
+    star: 'étoile',
+    noReviews: 'Aucun avis pour le moment.',
+    noReviewsHelp: 'Soyez le premier à donner votre avis après votre passage.',
+    reviewsTitle: 'Avis clients',
+    with: 'avec',
+    basedOn: 'avis',
+  },
+
   manage: {
     title: 'Votre rendez-vous',
     status: {
@@ -189,6 +211,7 @@ export const fr = {
       salon: 'Mon salon',
       prestations: 'Prestations',
       team: 'Équipe',
+      reviews: 'Avis',
       blocked: 'Indisponibilités',
     },
 
@@ -205,6 +228,17 @@ export const fr = {
         'Chaque membre peut recevoir un client en parallèle des autres. Le premier membre ajouté reprend vos rendez-vous à venir.',
       archiveHelp:
         'Un membre ne peut être archivé que lorsqu’il n’a plus de rendez-vous à venir.',
+    },
+
+    reviews: {
+      title: 'Avis reçus',
+      empty: 'Aucun avis pour le moment.',
+      emptyHelp:
+        'Vos clients pourront en laisser un après un rendez-vous que vous aurez marqué comme honoré.',
+      help:
+        'Seuls vos clients réellement venus peuvent noter. Les avis ne sont ni modifiables ni supprimables : c’est ce qui leur donne de la valeur.',
+      hidden: 'Retiré par Mawid',
+      visitedOn: 'Venu le',
     },
 
     agenda: {

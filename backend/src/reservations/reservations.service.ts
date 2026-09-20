@@ -160,6 +160,9 @@ export class ReservationsService {
       include: {
         reservationPrestations: true,
         salon: { select: { name: true, slug: true, contactPhone: true } },
+        // Présence d'un avis, pour que la page de gestion sache s'il faut
+        // proposer le formulaire ou remercier le client.
+        review: { select: { id: true } },
       },
     });
 
@@ -167,7 +170,10 @@ export class ReservationsService {
       throw new NotFoundException('Réservation introuvable');
     }
 
-    return this.toClientView(reservation, false);
+    return {
+      ...this.toClientView(reservation, false),
+      hasReview: reservation.review !== null,
+    };
   }
 
   /** Annulation par le client, via son lien de gestion. */

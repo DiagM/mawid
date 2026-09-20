@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { searchSalons, type SalonSearchResult } from '@/lib/api';
 import { fr } from '@/lib/i18n/fr';
 import { formatPrice } from '@/lib/format';
+import { RatingBadge } from '@/components/stars';
 
 type PageProps = {
   searchParams: Promise<{ q?: string; womenOnly?: string }>;
@@ -100,6 +101,13 @@ export default async function HomePage({ searchParams }: PageProps) {
                       <p className="mt-0.5 text-sm text-muted">
                         {salon.district}, {salon.city}
                       </p>
+                      <div className="mt-1">
+                        <RatingBadge
+                          average={salon.rating.average}
+                          count={salon.rating.count}
+                          size="sm"
+                        />
+                      </div>
                     </div>
 
                     {salon.isWomenOnly && (

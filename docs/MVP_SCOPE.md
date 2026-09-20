@@ -103,6 +103,8 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Rate limiting, Helmet, CORS par env | ✅ Fait |
 | Recherche de salons (`GET /api/salons`, `?city`, `?q`, `?womenOnly`) | ✅ Fait |
 | Sitemap (`GET /api/salons/sitemap`) | ✅ Fait |
+| Multi-employés (`/api/employees`, moteur par ressource) | ✅ Fait |
+| Avis clients (`POST /api/reservations/token/:token/review`) | ✅ Fait — verrou token + HONORED |
 | Tests | 🟡 51 tests unitaires lancés en CI. Pas encore de suite d'intégration automatisée sur base réelle (l'isolation A/B a été vérifiée manuellement sur deux salons). |
 
 ### Frontend
@@ -125,6 +127,7 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Indisponibilités `/pro/indisponibilites` | ✅ Fait |
 | Équipe `/pro/equipe` | ✅ Fait — ajout, archivage, réactivation |
 | Choix du membre dans le tunnel client | ✅ Fait — masqué si le salon n'a pas d'équipe |
+| Avis : dépôt, fiche salon, recherche, `/pro/avis` | ✅ Fait |
 
 ## 5. Ordre de construction
 
@@ -228,8 +231,16 @@ réactivation) et sélecteur « Avec qui ? » dans le tunnel client, masqué tan
 que le salon n'a pas d'équipe — le parcours d'un salon solo reste identique
 à la V1.
 
-Reste : avis clients (uniquement sur une réservation `HONORED`, pour couper
-court à l'abus redouté dans le business plan), statistiques, parrainage.
+Avis livrés le 2026-09-20. Le « potentiel d'abus » que redoutait le business
+plan est traité **structurellement** : il faut détenir le `cancellationToken`,
+le rendez-vous doit être `HONORED`, et `reservationId` est unique — un
+passage, un avis. Personne ne peut noter un salon où il n'est jamais allé.
+
+`isPublished` n'est **pas** accessible au gérant : un salon capable de masquer
+ses mauvaises notes rendrait le système sans valeur. `/pro/avis` est en
+lecture seule.
+
+Reste : statistiques, parrainage.
 
 **Lot 6 — V3.** Plans et quotas (Free 30 RDV/mois, Pro, Pro+), fiches
 clients, campagnes `wa.me` manuelles, mise en avant.

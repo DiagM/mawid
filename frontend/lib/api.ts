@@ -144,11 +144,48 @@ export interface PublicSalon {
   /** Équipe active (V2). Vide : le salon n'a pas d'employés, parcours V1. */
   employees: PublicEmployee[];
   prestations: PublicPrestation[];
+  rating: RatingSummary;
 }
 
 export interface PublicEmployee {
   id: string;
   fullName: string;
+}
+
+/** `average` vaut null sans aucun avis — jamais 0, qui pénaliserait un salon
+ *  qui vient d'ouvrir. */
+export interface RatingSummary {
+  average: number | null;
+  count: number;
+}
+
+export interface PublicReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  clientFirstName: string;
+  employeeName: string | null;
+}
+
+export interface SalonReviews extends RatingSummary {
+  items: PublicReview[];
+}
+
+export function getSalonReviews(slug: string): Promise<SalonReviews> {
+  return apiFetch<SalonReviews>(
+    `/salons/${encodeURIComponent(slug)}/reviews`,
+  );
+}
+
+export function createReview(
+  token: string,
+  input: { rating: number; comment?: string; website?: string },
+): Promise<{ id: string }> {
+  return apiFetch<{ id: string }>(
+    `/reservations/token/${encodeURIComponent(token)}/review`,
+    { method: 'POST', body: input },
+  );
 }
 
 export interface AvailableSlot {
@@ -181,6 +218,8 @@ export interface ReservationView {
   salon?: { name: string; slug: string; contactPhone: string };
   /** Présent uniquement dans la réponse de création. */
   cancellationToken?: string;
+  /** Présent sur la lecture par token : un avis a-t-il déjà été déposé ? */
+  hasReview?: boolean;
 }
 
 // ============================================
@@ -195,6 +234,7 @@ export interface SalonSearchItem {
   isWomenOnly: boolean;
   photo: string | null;
   fromPriceCents: number | null;
+  rating: RatingSummary;
 }
 
 export interface SalonSearchResult {

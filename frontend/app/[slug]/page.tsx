@@ -1,10 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ApiError, getPublicSalon, type PublicSalon } from '@/lib/api';
+import {
+  ApiError,
+  getPublicSalon,
+  getSalonReviews,
+  type PublicSalon,
+  type SalonReviews,
+} from '@/lib/api';
 import { fr, type WeekdayKey } from '@/lib/i18n/fr';
 import { formatDuration, formatPhone, formatPrice } from '@/lib/format';
 import { salonJsonLd, serializeJsonLd } from '@/lib/json-ld';
+import { RatingBadge, Stars } from '@/components/stars';
 import { siteUrl } from '@/lib/site-url';
 
 /** Ordre d'affichage : semaine algérienne, qui commence le dimanche. */
@@ -65,6 +72,15 @@ export default async function SalonPage({ params }: PageProps) {
   const { slug } = await params;
   const salon = await loadSalon(slug);
 
+  // Les avis ne doivent pas faire échouer la fiche : un salon reste
+  // consultable et réservable même si cette requête échoue.
+  let reviews: SalonReviews | null = null;
+  try {
+    reviews = await getSalonReviews(slug);
+  } catch {
+    reviews = null;
+  }
+
   const canonical = `${siteUrl()}/${salon.slug}`;
 
   return (
@@ -90,6 +106,12 @@ export default async function SalonPage({ params }: PageProps) {
             <p className="mt-1 text-muted">
               {salon.addressLine}, {salon.district} — {salon.city}
             </p>
+            <div className="mt-2">
+              <RatingBadge
+                average={salon.rating.average}
+                count={salon.rating.count}
+              />
+            </div>
           </div>
           {salon.isWomenOnly && (
             <span className="rounded-full bg-accent-soft px-3 py-1 text-sm font-medium text-accent">
@@ -166,6 +188,45 @@ export default async function SalonPage({ params }: PageProps) {
             );
           })}
         </dl>
+      </section>
+
+      <section aria-labelledby="avis" className="mb-8">
+        <h2 id="avis" className="mb-3 text-lg font-semibold">
+          {fr.review.reviewsTitle}
+        </h2>
+
+        {!reviews || reviews.items.length === 0 ? (
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <p className="text-muted">{fr.review.noReviews}</p>
+            <p className="mt-1 text-sm text-muted">
+              {fr.review.noReviewsHelp}
+            </p>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {reviews.items.map((review) => (
+              <li
+                key={review.id}
+                className="rounded-xl border border-border bg-surface p-4"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-medium">{review.clientFirstName}</span>
+                  <Stars rating={review.rating} size="sm" />
+                </div>
+
+                {review.employeeName && (
+                  <p className="mt-0.5 text-sm text-muted">
+                    {fr.review.with} {review.employeeName}
+                  </p>
+                )}
+
+                {review.comment && (
+                  <p className="mt-2 leading-relaxed">{review.comment}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {/*
