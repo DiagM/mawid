@@ -460,16 +460,18 @@ priorité sur `[slug]`. `common/slug.ts` maintient désormais une liste
 réservée (`pro`, `admin`, `r`, `pour-les-salons`, `api`, `sitemap`,
 `robots`, `manifest`), à tenir à jour avec les routes du frontend.
 
-**Écart entre le business plan et le code, à trancher.** §8.1 décrit trois
 offres dont la différence porte sur les fonctionnalités (multi-employés en
-Pro, caisse et stocks en Pro+). Le code ne conditionne **rien** au plan, à
-la seule exception du quota mensuel de réservations : un salon Free dispose
-aujourd'hui de la caisse, des stocks, des statistiques et du multi-employés.
+Pro, caisse et stocks en Pro+). Au moment de cette page, le code ne
+conditionnait **rien** au plan hormis le quota mensuel : un salon Gratuit
+disposait de la caisse, des stocks, des statistiques et du multi-employés.
 
-La page n'annonce donc que ce qui est vrai — Gratuit (30 RDV/mois) et Pro
-(3 000 DZD, illimité), toutes fonctionnalités incluses. **Pro+ n'y figure
-pas** : à 5 500 DZD, il n'aurait aujourd'hui rien de plus que Pro. Le
-vendre supposerait d'implémenter d'abord le conditionnement par offre.
+La page n'annonçait donc d'abord que ce qui était vrai — Gratuit et Pro,
+toutes fonctionnalités incluses. **Pro+ en était absent** : à 5 500 DZD, il
+n'aurait rien eu de plus que Pro.
+
+**Résolu au lot 12.** Le conditionnement par offre donne à Pro+ un contenu
+réel — caisse, stocks, blocage des numéros abusifs — et la grille affiche
+désormais les trois paliers, chacun avec sa promesse en une phrase.
 
 **Lot 12 — Conditionnement par offre.** ✅ Livré le 2026-09-20.
 
