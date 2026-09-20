@@ -12,6 +12,7 @@ import { ReservationsModule } from './reservations/reservations.module';
 import { BlockedSlotsModule } from './blocked-slots/blocked-slots.module';
 import { EmployeesModule } from './employees/employees.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { StatsModule } from './stats/stats.module';
 import { getThrottlerOptions } from './common/throttling/throttle-config';
 
 @Module({
@@ -26,6 +27,7 @@ import { getThrottlerOptions } from './common/throttling/throttle-config';
     BlockedSlotsModule,
     EmployeesModule,
     ReviewsModule,
+    StatsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -269,6 +269,53 @@ export function updateReservationStatus(
 }
 
 // ============================================
+// Statistiques (V2)
+// ============================================
+
+export interface StatsCounts {
+  confirmed: number;
+  honored: number;
+  noShow: number;
+  canceled: number;
+  total: number;
+}
+
+export interface PeriodStats {
+  revenueCents: number;
+  counts: StatsCounts;
+  averageBasketCents: number | null;
+  noShowRate: number | null;
+}
+
+export interface ManagerStats {
+  period: { from: string; to: string };
+  current: PeriodStats;
+  /** Même durée, juste avant : c'est ce qui rend la comparaison honnête. */
+  previous: PeriodStats;
+  topPrestations: { name: string; count: number; revenueCents: number }[];
+  byEmployee: {
+    id: string;
+    fullName: string;
+    count: number;
+    revenueCents: number;
+  }[];
+  clients: { total: number; returning: number; new: number };
+}
+
+export function getStats(
+  token: string,
+  from?: string,
+  to?: string,
+): Promise<ManagerStats> {
+  const query = new URLSearchParams();
+  if (from) query.set('from', from);
+  if (to) query.set('to', to);
+  const suffix = query.toString() ? `?${query.toString()}` : '';
+
+  return apiFetch<ManagerStats>(`/stats/me${suffix}`, { token });
+}
+
+// ============================================
 // Créneaux bloqués
 // ============================================
 

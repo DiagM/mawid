@@ -212,6 +212,7 @@ export const fr = {
       prestations: 'Prestations',
       team: 'Équipe',
       reviews: 'Avis',
+      stats: 'Statistiques',
       blocked: 'Indisponibilités',
     },
 
@@ -228,6 +229,30 @@ export const fr = {
         'Chaque membre peut recevoir un client en parallèle des autres. Le premier membre ajouté reprend vos rendez-vous à venir.',
       archiveHelp:
         'Un membre ne peut être archivé que lorsqu’il n’a plus de rendez-vous à venir.',
+    },
+
+    stats: {
+      title: 'Statistiques',
+      period: 'Période',
+      last30: '30 derniers jours',
+      last7: '7 derniers jours',
+      last90: '90 derniers jours',
+      revenue: 'Chiffre d’affaires',
+      revenueHelp: 'Rendez-vous honorés uniquement.',
+      honored: 'Rendez-vous honorés',
+      averageBasket: 'Panier moyen',
+      noShowRate: 'Clients absents',
+      noShowHelp:
+        'Part des clients attendus qui ne sont pas venus. Les annulations à l’avance ne comptent pas.',
+      vsPrevious: 'vs période précédente',
+      topPrestations: 'Prestations les plus rentables',
+      byEmployee: 'Par membre de l’équipe',
+      clients: 'Clients',
+      newClients: 'nouveaux',
+      returningClients: 'déjà venus',
+      empty: 'Aucune donnée sur cette période.',
+      emptyHelp: 'Les statistiques apparaîtront après vos premiers rendez-vous honorés.',
+      noData: '—',
     },
 
     reviews: {

@@ -105,6 +105,7 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Sitemap (`GET /api/salons/sitemap`) | ✅ Fait |
 | Multi-employés (`/api/employees`, moteur par ressource) | ✅ Fait |
 | Avis clients (`POST /api/reservations/token/:token/review`) | ✅ Fait — verrou token + HONORED |
+| Statistiques (`GET /api/stats/me`) | ✅ Fait — avec période comparative |
 | Tests | 🟡 51 tests unitaires lancés en CI. Pas encore de suite d'intégration automatisée sur base réelle (l'isolation A/B a été vérifiée manuellement sur deux salons). |
 
 ### Frontend
@@ -128,6 +129,7 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Équipe `/pro/equipe` | ✅ Fait — ajout, archivage, réactivation |
 | Choix du membre dans le tunnel client | ✅ Fait — masqué si le salon n'a pas d'équipe |
 | Avis : dépôt, fiche salon, recherche, `/pro/avis` | ✅ Fait |
+| Statistiques `/pro/statistiques` | ✅ Fait — 7/30/90 jours |
 
 ## 5. Ordre de construction
 
@@ -240,7 +242,18 @@ passage, un avis. Personne ne peut noter un salon où il n'est jamais allé.
 ses mauvaises notes rendrait le système sans valeur. `/pro/avis` est en
 lecture seule.
 
-Reste : statistiques, parrainage.
+Statistiques livrées le 2026-09-20. Chaque indicateur est accompagné de la
+**période précédente de même durée** : le chiffre brut ne dit rien tout seul,
+la question utile au gérant est « est-ce que ça va mieux ? ».
+
+Deux choix de calcul qui changent la lecture :
+- le chiffre d'affaires ne compte **que** les rendez-vous honorés, et somme
+  les snapshots de prix — changer un tarif ne réécrit pas l'historique ;
+- le taux d'absence exclut les annulations du dénominateur. Annuler à
+  l'avance est un comportement correct qui laisse au salon le temps de
+  reprendre le créneau ; le mélanger aux absences brouillerait l'indicateur.
+
+Reste : parrainage.
 
 **Lot 6 — V3.** Plans et quotas (Free 30 RDV/mois, Pro, Pro+), fiches
 clients, campagnes `wa.me` manuelles, mise en avant.
