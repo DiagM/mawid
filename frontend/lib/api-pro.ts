@@ -490,6 +490,9 @@ export interface ClientDetail {
   firstName: string;
   phone: string;
   reservations: ClientReservation[];
+  /** Bloquée DANS CE SALON. Distinct du bannissement plateforme. */
+  isBlockedHere: boolean;
+  blockReason: string | null;
 }
 
 export function getClient(
@@ -599,5 +602,18 @@ export function deleteBlockedSlot(token: string, id: string): Promise<void> {
   return apiFetch<void>(`/blocked-slots/${encodeURIComponent(id)}`, {
     method: 'DELETE',
     token,
+  });
+}
+
+export function setClientBlocked(
+  token: string,
+  clientId: string,
+  isBlocked: boolean,
+  reason?: string,
+): Promise<{ clientId: string; isBlockedHere: boolean }> {
+  return apiFetch(`/clients/${encodeURIComponent(clientId)}/blocked`, {
+    method: 'PATCH',
+    token,
+    body: { isBlocked, ...(reason && { reason }) },
   });
 }

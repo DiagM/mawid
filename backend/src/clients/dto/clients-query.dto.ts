@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsIn,
   IsInt,
   IsOptional,
@@ -42,4 +43,21 @@ export class ClientsQueryDto {
   @Min(7)
   @Max(365)
   lapsedDays?: number;
+}
+
+/**
+ * Blocage d'une cliente dans le salon du gérant connecté.
+ *
+ * Aucun `clientId` ni `salonId` : le premier vient de l'URL, le second du
+ * JWT. Un gérant ne doit jamais pouvoir désigner le salon sur lequel il agit.
+ */
+export class BlockClientDto {
+  @IsBoolean()
+  isBlocked!: boolean;
+
+  /** Motif privé, jamais montré à la cliente. */
+  @IsOptional()
+  @IsString()
+  @Length(1, 200)
+  reason?: string;
 }

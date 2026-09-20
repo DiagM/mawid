@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { assertCapability } from '../common/plans';
+import { BlockClientDto } from './dto/clients-query.dto';
 import { utcToLocalDate } from '../common/time/algiers-time';
 import type { ClientSegment } from './dto/clients-query.dto';
 
@@ -212,10 +213,17 @@ export class ClientsService {
 
     const latest = reservations[0];
 
+    const blocked = await this.prisma.salonBlockedClient.findUnique({
+      where: { salonId_clientId: { salonId: salon.id, clientId } },
+      select: { reason: true },
+    });
+
     return {
       id: clientId,
       firstName: latest.clientFirstName,
       phone: latest.clientPhone,
+      isBlockedHere: blocked !== null,
+      blockReason: blocked?.reason ?? null,
       reservations: reservations.map((reservation) => ({
         id: reservation.id,
         localDate: utcToLocalDate(reservation.startsAt),
@@ -233,6 +241,49 @@ export class ClientsService {
         ),
       })),
     };
+  }
+
+  /**
+   * Bloque ou débloque une cliente **dans ce salon**.
+   *
+   * Local et non global : `Client.isBlocked` bannit de toute la plateforme
+   * et relève de Mawid. Un salon qui subit des lapins répétés doit pouvoir
+   * refuser cette personne chez lui, sans l'exclure de tous les autres —
+   * ce serait lui donner un pouvoir qui n'est pas le sien.
+   *
+   * La cliente doit avoir un historique dans ce salon : sans ce contrôle,
+   * un gérant pourrait bloquer n'importe quel identifiant et s'en servir
+   * pour deviner qui fréquente la plateforme.
+   */
+  async setBlocked(userId: string, clientId: string, dto: BlockClientDto) {
+    const salon = await this.getOwnedSalon(userId);
+    assertCapability(salon.plan, 'clients');
+
+    const seenHere = await this.prisma.reservation.count({
+      where: { salonId: salon.id, clientId },
+    });
+
+    if (seenHere === 0) {
+      throw new NotFoundException('Client introuvable dans votre salon');
+    }
+
+    if (dto.isBlocked) {
+      await this.prisma.salonBlockedClient.upsert({
+        where: { salonId_clientId: { salonId: salon.id, clientId } },
+        // Réécrit le motif : rebloquer quelqu'un est souvent l'occasion de
+        // préciser pourquoi.
+        update: { reason: dto.reason ?? null },
+        create: { salonId: salon.id, clientId, reason: dto.reason ?? null },
+      });
+    } else {
+      // `deleteMany` et non `delete` : débloquer quelqu'un qui ne l'était
+      // pas ne doit pas échouer, l'action est idempotente.
+      await this.prisma.salonBlockedClient.deleteMany({
+        where: { salonId: salon.id, clientId },
+      });
+    }
+
+    return { clientId, isBlockedHere: dto.isBlocked };
   }
 
   private async getOwnedSalon(userId: string) {

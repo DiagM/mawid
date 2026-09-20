@@ -111,8 +111,9 @@ model Salon {
   prestations  Prestation[]
   employees    Employee[]
   blockedSlots BlockedSlot[]
-  reservations  Reservation[]
-  reviews       Review[]
+  reservations    Reservation[]
+  reviews         Review[]
+  blockedClients  SalonBlockedClient[]
   cashMovements CashMovement[]
   products      Product[]
 
@@ -236,9 +237,14 @@ model Client {
   phone     String @unique // Clé naturelle, E.164 — un numéro = une personne
   firstName String // Dernier prénom connu (la réservation en garde un snapshot)
 
-  // Blocage anti-abus. Comme il n'y a pas d'OTP SMS (écarté par la contrainte
-  // de gratuité, cf. docs/MVP_SCOPE.md §2.1), c'est avec le rate limiting le
-  // seul rempart contre les fausses réservations en série.
+  // Bannissement de la PLATEFORME, décidé par Mawid. Comme il n'y a pas
+  // d'OTP SMS (écarté par la contrainte de gratuité, cf. docs/MVP_SCOPE.md
+  // §2.1), c'est avec le rate limiting le seul rempart contre les fausses
+  // réservations en série.
+  //
+  // À ne pas confondre avec `SalonBlockedClient`, qui est le blocage LOCAL
+  // décidé par un gérant : un salon ne doit pas pouvoir exclure quelqu'un de
+  // tous les autres salons.
   isBlocked Boolean @default(false)
 
   // Métadonnées
@@ -248,6 +254,7 @@ model Client {
   // Relations
   reservations Reservation[]
   reviews      Review[]
+  blockedBy    SalonBlockedClient[]
 
   @@index([phone])
   @@map("clients")
@@ -489,4 +496,32 @@ model ReservationPrestation {
   @@unique([reservationId, prestationId])
   @@index([reservationId])
   @@map("reservation_prestations")
+}
+
+// ============================================
+// SalonBlockedClient — Blocage local d'une cliente
+// ============================================
+// `Client.isBlocked` bannit de toute la plateforme et relève de Mawid.
+// Celui-ci est local : un salon qui subit des lapins répétés doit pouvoir
+// refuser cette personne CHEZ LUI, sans l'exclure des autres salons — ce
+// serait lui donner un pouvoir qui n'est pas le sien.
+model SalonBlockedClient {
+  id       String @id @default(cuid())
+  salonId  String
+  clientId String
+
+  // Motif privé, pour que le gérant se souvienne de sa décision six mois
+  // plus tard. Jamais montré à la cliente.
+  reason String?
+
+  createdAt DateTime @default(now())
+
+  salon  Salon  @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  // Un salon ne bloque une cliente qu'une fois : l'unicité rend le
+  // débloquage/reblocage idempotent et évite des doublons invisibles.
+  @@unique([salonId, clientId])
+  @@index([clientId])
+  @@map("salon_blocked_clients")
 }

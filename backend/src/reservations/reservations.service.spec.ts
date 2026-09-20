@@ -39,6 +39,7 @@ describe('ReservationsService', () => {
       count: jest.Mock;
     };
     client: { upsert: jest.Mock };
+    salonBlockedClient: { findUnique: jest.Mock };
     $transaction: jest.Mock;
   };
   let availability: {
@@ -62,6 +63,11 @@ describe('ReservationsService', () => {
         create: jest.fn(),
         // Quotas par numéro : aucun RDV existant par défaut.
         count: jest.fn().mockResolvedValue(0),
+      },
+      salonBlockedClient: {
+        // Aucun blocage local par défaut : les scénarios qui en veulent un
+        // le posent explicitement.
+        findUnique: jest.fn().mockResolvedValue(null),
       },
       client: {
         upsert: jest.fn().mockResolvedValue({ id: 'cli-1', isBlocked: false }),

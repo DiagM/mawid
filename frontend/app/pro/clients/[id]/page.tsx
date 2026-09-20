@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ApiError } from '@/lib/api';
 import { getClient, type ClientDetail } from '@/lib/api-pro';
 import { fr } from '@/lib/i18n/fr';
+import { BlockClient } from './block-client';
 import { formatLongDate, formatPhone, formatPrice } from '@/lib/format';
 import { requireSessionToken } from '@/lib/session';
 
@@ -149,6 +150,12 @@ export default async function ClientDetailPage({ params }: PageProps) {
           </li>
         ))}
       </ul>
+
+      <BlockClient
+        clientId={client.id}
+        isBlockedHere={client.isBlockedHere}
+        blockReason={client.blockReason}
+      />
     </main>
   );
 }

@@ -100,13 +100,7 @@ export class ReservationsService {
       dto.clientFirstName,
     );
 
-    if (client.isBlocked) {
-      // Message volontairement neutre : confirmer à un abuseur qu'il est
-      // blacklisté lui apprend juste à changer de numéro.
-      throw new ForbiddenException(
-        'Réservation impossible. Contactez directement le salon.',
-      );
-    }
+    await this.assertNotBlocked(client, context.salonId);
 
     await this.assertPhoneQuotas(client.id, context.salonId);
     await this.assertSalonQuota(context.salonId);
@@ -425,6 +419,38 @@ export class ReservationsService {
           'ou contactez directement le salon.',
       );
     }
+  }
+
+  /**
+   * Deux blocages distincts, refusés du même message.
+   *
+   * `Client.isBlocked` est un bannissement de la PLATEFORME, décidé par
+   * Mawid. `SalonBlockedClient` est local : un salon refuse quelqu'un chez
+   * lui sans l'exclure des autres, ce qui serait lui donner un pouvoir qui
+   * n'est pas le sien.
+   *
+   * Le message est neutre et identique dans les deux cas : confirmer à un
+   * abuseur qu'il est bloqué, et par qui, lui apprend seulement à changer de
+   * numéro ou de salon.
+   */
+  private async assertNotBlocked(
+    client: { id: string; isBlocked: boolean },
+    salonId: string,
+  ) {
+    if (!client.isBlocked) {
+      const locally = await this.prisma.salonBlockedClient.findUnique({
+        where: { salonId_clientId: { salonId, clientId: client.id } },
+        select: { id: true },
+      });
+
+      if (!locally) {
+        return;
+      }
+    }
+
+    throw new ForbiddenException(
+      'Réservation impossible. Contactez directement le salon.',
+    );
   }
 
   private async upsertClient(phone: string, firstName: string) {

@@ -1,6 +1,14 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ClientsService } from './clients.service';
-import { ClientsQueryDto } from './dto/clients-query.dto';
+import { BlockClientDto, ClientsQueryDto } from './dto/clients-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
@@ -34,5 +42,19 @@ export class ClientsController {
   @Get(':id')
   findOne(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return this.clientsService.findOne(user.id, id);
+  }
+
+  /**
+   * PATCH /api/clients/:id/blocked
+   * Bloque ou débloque une cliente DANS CE SALON. Le bannissement de la
+   * plateforme, lui, reste une décision de Mawid (`/api/admin`).
+   */
+  @Patch(':id/blocked')
+  setBlocked(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() dto: BlockClientDto,
+  ) {
+    return this.clientsService.setBlocked(user.id, id, dto);
   }
 }

@@ -419,6 +419,16 @@ export const fr = {
     },
 
     clients: {
+      blockTitle: 'Bloquer cette cliente',
+      blockHelp:
+        'Elle ne pourra plus réserver en ligne dans VOTRE salon. Les autres salons ne sont pas concernés, et elle n’en est pas informée.',
+      block: 'Bloquer',
+      unblock: 'Débloquer',
+      blockedHere: 'Bloquée dans votre salon',
+      blockReason: 'Motif (privé)',
+      blockReasonPlaceholder: 'Trois rendez-vous manqués',
+      blockDone: 'Cliente bloquée dans votre salon.',
+      unblockDone: 'Cliente débloquée.',
       title: 'Clients',
       search: 'Rechercher un client',
       searchPlaceholder: 'Prénom ou numéro…',

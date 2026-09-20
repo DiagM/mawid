@@ -710,3 +710,35 @@ export async function moveEmployeeAction(formData: FormData): Promise<void> {
 
   revalidatePath('/pro/equipe');
 }
+
+// ============================================
+// Clientèle
+// ============================================
+
+/**
+ * Bloque ou débloque une cliente DANS CE SALON.
+ *
+ * Le bannissement de la plateforme relève de Mawid et n'est pas accessible
+ * ici : un salon ne doit pas pouvoir exclure quelqu'un de tous les autres.
+ */
+export async function setClientBlockedAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const token = await requireSessionToken();
+  const clientId = String(formData.get('clientId') ?? '');
+  const isBlocked = String(formData.get('isBlocked') ?? '') === 'true';
+  const reason = String(formData.get('reason') ?? '').trim();
+
+  try {
+    await pro.setClientBlocked(token, clientId, isBlocked, reason || undefined);
+  } catch (error) {
+    return { error: toMessage(error, fr.common.error) };
+  }
+
+  revalidatePath(`/pro/clients/${clientId}`);
+  revalidatePath('/pro/clients');
+  return {
+    success: isBlocked ? fr.pro.clients.blockDone : fr.pro.clients.unblockDone,
+  };
+}
