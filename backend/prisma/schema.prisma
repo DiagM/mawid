@@ -106,6 +106,7 @@ model Salon {
   employees    Employee[]
   blockedSlots BlockedSlot[]
   reservations Reservation[]
+  reviews      Review[]
 
   @@index([slug])
   @@index([ownerId])
@@ -150,6 +151,7 @@ model Employee {
   salon        Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
   reservations Reservation[]
   blockedSlots BlockedSlot[]
+  reviews      Review[]
 
   @@index([salonId])
   @@index([salonId, isActive])
@@ -236,6 +238,7 @@ model Client {
 
   // Relations
   reservations Reservation[]
+  reviews      Review[]
 
   @@index([phone])
   @@map("clients")
@@ -288,6 +291,7 @@ model Reservation {
   client   Client    @relation(fields: [clientId], references: [id], onDelete: Restrict)
 
   reservationPrestations ReservationPrestation[]
+  review                 Review?
 
   @@index([salonId, startsAt])
   @@index([employeeId, startsAt])
@@ -302,6 +306,48 @@ enum ReservationStatus {
   HONORED // Client est venu, prestation effectuée
   NO_SHOW // Client ne s'est pas présenté
   CANCELED // Annulé (par le client ou le gérant)
+}
+
+// ============================================
+// Review — Avis client (V2)
+// ============================================
+// Le business plan écartait les avis de la V1 pour « potentiel d'abus
+// initial » (§7.1). La réponse tient dans ce modèle plutôt que dans de la
+// modération : un avis est rattaché à UNE réservation, et seul le porteur du
+// `cancellationToken` d'un rendez-vous réellement HONORÉ peut le déposer.
+//
+// Conséquence : impossible de noter un salon où l'on n'est jamais allé, et
+// impossible de noter deux fois le même passage. Aucun compte n'est requis,
+// ce qui préserve la promesse produit.
+model Review {
+  id            String @id @default(cuid())
+  salonId       String
+  // Unique : un passage, un avis. C'est le verrou anti-spam central.
+  reservationId String @unique
+  clientId      String
+  // Qui a réalisé la prestation. Null pour un salon sans équipe, ou pour un
+  // RDV antérieur à la création de l'équipe.
+  employeeId    String?
+
+  rating  Int // 1 à 5, borné par le DTO
+  comment String? @db.Text
+
+  // Retrait d'un avis abusif par la plateforme. Volontairement PAS accessible
+  // au gérant : un salon qui peut masquer ses mauvaises notes rend tout le
+  // système d'avis sans valeur.
+  isPublished Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  salon       Salon       @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  client      Client      @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  employee    Employee?   @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@index([salonId, isPublished, createdAt])
+  @@index([employeeId])
+  @@map("reviews")
 }
 
 // ============================================

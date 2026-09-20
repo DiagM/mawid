@@ -2,6 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { SalonsService } from './salons.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ReviewsService } from '../reviews/reviews.service';
 
 /**
  * Premier argument du premier appel d'un mock, typé explicitement.
@@ -44,7 +45,21 @@ describe('SalonsService', () => {
     };
 
     const moduleRef = await Test.createTestingModule({
-      providers: [SalonsService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        SalonsService,
+        { provide: PrismaService, useValue: prisma },
+        // Les notes sont agrégées par ReviewsService : on le double ici, ces
+        // tests portent sur la recherche et le scoping, pas sur la notation.
+        {
+          provide: ReviewsService,
+          useValue: {
+            summaryForSalon: jest
+              .fn()
+              .mockResolvedValue({ average: null, count: 0 }),
+            summariesForSalons: jest.fn().mockResolvedValue(new Map()),
+          },
+        },
+      ],
     }).compile();
 
     service = moduleRef.get(SalonsService);

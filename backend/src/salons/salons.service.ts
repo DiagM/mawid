@@ -3,10 +3,14 @@ import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateSalonDto } from './dto/update-salon.dto';
 import { SearchSalonsDto } from './dto/search-salons.dto';
+import { ReviewsService } from '../reviews/reviews.service';
 
 @Injectable()
 export class SalonsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reviews: ReviewsService,
+  ) {}
 
   /**
    * Recherche publique de salons.
@@ -44,6 +48,8 @@ export class SalonsService {
         take: limit,
         skip: offset,
         select: {
+          // Interne : sert au regroupement des notes, retiré de la réponse.
+          id: true,
           slug: true,
           name: true,
           district: true,
@@ -61,6 +67,11 @@ export class SalonsService {
       this.prisma.salon.count({ where }),
     ]);
 
+    // Un agrégat par salon produirait N+1 requêtes sur une page de résultats.
+    const ratings = await this.reviews.summariesForSalons(
+      salons.map((salon) => salon.id),
+    );
+
     return {
       total,
       limit,
@@ -75,6 +86,7 @@ export class SalonsService {
         // « À partir de » : le prix d'appel est ce qui fait cliquer, et il
         // évite d'afficher un catalogue complet dans une liste de résultats.
         fromPriceCents: salon.prestations[0]?.priceCents ?? null,
+        rating: ratings.get(salon.id) ?? { average: null, count: 0 },
       })),
     };
   }
@@ -182,7 +194,10 @@ export class SalonsService {
       throw new NotFoundException('Salon introuvable');
     }
 
-    return salon;
+    return {
+      ...salon,
+      rating: await this.reviews.summaryForSalon(salon.id),
+    };
   }
 
   /**
