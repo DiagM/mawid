@@ -5,9 +5,9 @@ import { siteUrl } from '@/lib/site-url';
 /**
  * Sitemap.
  *
- * Seules les fiches salon y figurent : le tunnel de réservation et les pages
- * `/r/<token>` sont en `noindex`, et le back-office n'a rien à faire dans un
- * index public.
+ * Y figurent l'accueil, la page de présentation aux salons et les fiches
+ * salon. Le tunnel de réservation et les pages `/r/<token>` sont en
+ * `noindex`, et le back-office n'a rien à faire dans un index public.
  *
  * Si le backend est injoignable au moment de la génération, on renvoie au
  * moins l'accueil plutôt que de faire échouer la route entière — un sitemap
@@ -22,6 +22,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 1,
+    },
+    {
+      // Page d'acquisition B2B : c'est par elle qu'un gérant qui cherche
+      // « logiciel rendez-vous salon Alger » doit arriver.
+      url: `${base}/pour-les-salons`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.9,
     },
   ];
 

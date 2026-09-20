@@ -18,6 +18,28 @@ export function slugify(input: string): string {
 }
 
 /**
+ * Slugs que le frontend utilise pour ses propres pages.
+ *
+ * La fiche publique d'un salon vit à la racine (`mawid.dz/karim-barber`),
+ * donc un salon qui obtiendrait l'un de ces slugs serait purement et
+ * simplement inaccessible : Next donne la priorité à sa route statique sur
+ * la route dynamique `[slug]`. Le salon existerait, paierait peut-être, et
+ * son lien renverrait une autre page.
+ *
+ * À tenir à jour en même temps que les routes de `frontend/app/`.
+ */
+export const RESERVED_SLUGS = new Set([
+  'pro',
+  'admin',
+  'r',
+  'pour-les-salons',
+  'api',
+  'sitemap',
+  'robots',
+  'manifest',
+]);
+
+/**
  * Rend un slug unique en le suffixant.
  *
  * @param isTaken prédicat asynchrone d'existence en base
@@ -33,13 +55,13 @@ export async function uniqueSlug(
 ): Promise<string> {
   const root = slugify(base) || 'salon';
 
-  if (!(await isTaken(root))) {
+  if (!RESERVED_SLUGS.has(root) && !(await isTaken(root))) {
     return root;
   }
 
   for (let suffix = 2; suffix <= maxAttempts; suffix += 1) {
     const candidate = `${root}-${suffix}`;
-    if (!(await isTaken(candidate))) {
+    if (!RESERVED_SLUGS.has(candidate) && !(await isTaken(candidate))) {
       return candidate;
     }
   }

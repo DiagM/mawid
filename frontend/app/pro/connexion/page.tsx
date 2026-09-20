@@ -35,6 +35,14 @@ export default async function LoginPage() {
           {fr.pro.createAccount}
         </Link>
       </p>
+      <p className="mt-3 text-center text-sm">
+        <Link
+          href="/pour-les-salons"
+          className="text-muted underline underline-offset-4"
+        >
+          {fr.pro.discoverMawid}
+        </Link>
+      </p>
     </main>
   );
 }

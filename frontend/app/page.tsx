@@ -141,6 +141,18 @@ export default async function HomePage({ searchParams }: PageProps) {
           </ul>
         </>
       )}
+
+      {/* Le seul lien B2B de la page cliente : discret, en pied, mais présent.
+          Un gérant qui découvre Mawid arrive presque toujours par la fiche
+          d'un confrère ou par cette recherche, pas par une publicité. */}
+      <footer className="mt-12 border-t border-border pt-6 text-center">
+        <Link
+          href="/pour-les-salons"
+          className="text-sm text-muted underline underline-offset-4 hover:text-accent"
+        >
+          {fr.search.forSalons}
+        </Link>
+      </footer>
     </main>
   );
 }

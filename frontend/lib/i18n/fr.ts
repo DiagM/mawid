@@ -37,6 +37,7 @@ export const fr = {
     emptyHelp: 'Essayez un autre mot, ou retirez le filtre.',
     from: 'à partir de',
     featured: 'Mis en avant',
+    forSalons: 'Vous êtes un salon ? Inscrivez-vous sur Mawid',
   },
 
   salon: {
@@ -167,6 +168,7 @@ export const fr = {
     signIn: 'Se connecter',
     signingIn: 'Connexion…',
     signOut: 'Déconnexion',
+    discoverMawid: 'Découvrir Mawid pour les salons',
     invalidCredentials: 'Identifiants invalides',
     noAccount: 'Pas encore de compte ?',
     createAccount: 'Inscrire mon salon',
@@ -585,6 +587,151 @@ export const fr = {
         'Masquer retire l’avis des fiches publiques sans l’effacer : la cliente ne peut pas en redéposer un autre sur le même rendez-vous. Le gérant, lui, n’a aucun moyen de masquer ses mauvaises notes.',
       visitedOn: 'Venue le {date}',
     },
+  },
+  landing: {
+    metaTitle: 'Mawid pour les salons — Remplissez votre agenda',
+    metaDescription:
+      'Mawid est la plateforme de réservation en ligne des salons de beauté et barbershops en Algérie. Vos clientes réservent 24h/24, sans créer de compte. Gratuit jusqu’à 30 rendez-vous par mois.',
+
+    heroTitle: 'Vos clientes réservent pendant que vous coiffez.',
+    heroSubtitle:
+      'Mawid met votre salon en ligne : vos clientes choisissent leur créneau depuis leur téléphone, à toute heure, sans vous appeler et sans créer de compte.',
+    heroCta: 'Inscrire mon salon',
+    heroSecondary: 'J’ai déjà un compte',
+    heroNote: 'Gratuit jusqu’à 30 rendez-vous par mois. Sans engagement.',
+
+    problemTitle: 'Ce que ça change pour vous',
+    problems: [
+      {
+        title: 'Plus d’appels pendant une coupe',
+        body:
+          'Un appel manqué est un rendez-vous perdu. Vos clientes réservent seules, y compris le soir et le dimanche, quand votre téléphone ne sonne pas.',
+      },
+      {
+        title: 'Jamais deux clientes à la même heure',
+        body:
+          'Le créneau disparaît dès qu’il est pris. Même si deux personnes valident à la seconde près, une seule passe — c’est garanti par la base de données, pas par un calcul approximatif.',
+      },
+      {
+        title: 'Une page que Google trouve',
+        body:
+          'Votre salon a sa page, avec vos prestations, vos prix et vos horaires. Elle se partage en un lien sur WhatsApp et sur Instagram.',
+      },
+      {
+        title: 'Vous gardez la main',
+        body:
+          'Vous bloquez un créneau, vous notez une absence, vous fermez une journée. Ce que vous bloquez disparaît immédiatement des créneaux proposés.',
+      },
+    ],
+
+    featuresTitle: 'Tout ce que vous pouvez piloter',
+    features: [
+      {
+        title: 'Agenda et prestations',
+        body:
+          'Vos prestations avec durée et prix, vos horaires jour par jour, votre agenda du jour. Vous qualifiez chaque rendez-vous : honoré, non présenté, annulé.',
+      },
+      {
+        title: 'Votre équipe',
+        body:
+          'Plusieurs personnes travaillent en parallèle, chacune avec ses propres horaires et ses jours d’absence. La cliente peut choisir avec qui.',
+      },
+      {
+        title: 'Votre clientèle',
+        body:
+          'La fiche de chaque cliente se construit toute seule au fil des rendez-vous. Vous voyez qui revient et qui n’est pas revenue depuis deux mois.',
+      },
+      {
+        title: 'Relances WhatsApp',
+        body:
+          'Vous écrivez votre message une fois, Mawid prépare la liste et les liens. L’envoi part de votre WhatsApp, depuis votre numéro — donc il est lu.',
+      },
+      {
+        title: 'Caisse et stocks',
+        body:
+          'Ventes et dépenses du jour, encaissement d’un rendez-vous en un clic, produits et alertes de stock bas.',
+      },
+      {
+        title: 'Avis vérifiés',
+        body:
+          'Seule une cliente réellement venue peut noter, une seule fois. Ni vous ni un concurrent ne pouvez peser sur vos notes.',
+      },
+    ],
+
+    pricingTitle: 'Tarifs',
+    pricingNote:
+      'Toutes les fonctionnalités sont incluses dans les deux offres. La seule différence est le nombre de rendez-vous en ligne par mois.',
+    planFreeName: 'Gratuit',
+    planFreePrice: '0 DZD',
+    planFreePeriod: 'pour toujours',
+    planFreeLimit: '30 rendez-vous en ligne par mois',
+    planProName: 'Pro',
+    planProPrice: '3 000 DZD',
+    planProPeriod: 'par mois, sans engagement',
+    planProLimit: 'Rendez-vous illimités',
+    planIncluded: 'Inclus dans les deux offres',
+    planFeatures: [
+      'Page salon publique et référencée',
+      'Réservation sans compte pour vos clientes',
+      'Agenda, prestations, horaires, absences',
+      'Équipe, clientèle, avis vérifiés',
+      'Caisse, stocks, statistiques',
+      'Relances WhatsApp',
+    ],
+    quotaWarning:
+      'Au-delà de 30 rendez-vous dans le mois, l’offre gratuite bloque la réservation en ligne. Vos clientes peuvent toujours vous appeler, et vous êtes prévenu bien avant d’y arriver.',
+
+    stepsTitle: 'Comment démarrer',
+    steps: [
+      {
+        title: 'Vous créez votre compte',
+        body:
+          'Votre nom, votre numéro, l’adresse du salon. Trois minutes, aucune carte bancaire.',
+      },
+      {
+        title: 'Vous ajoutez vos prestations',
+        body:
+          'Nom, durée, prix. C’est ce qui construit la grille de créneaux proposée à vos clientes.',
+      },
+      {
+        title: 'Nous validons votre salon',
+        body:
+          'Un salon n’apparaît en ligne qu’après vérification de notre côté. C’est ce qui protège la plateforme des faux salons — et donc votre réputation.',
+      },
+    ],
+
+    faqTitle: 'Questions fréquentes',
+    faq: [
+      {
+        question: 'Mes clientes doivent-elles créer un compte ?',
+        answer:
+          'Non. Un prénom et un numéro de téléphone suffisent. C’est ce qui fait la différence entre une réservation terminée et une réservation abandonnée.',
+      },
+      {
+        question: 'Est-ce que Mawid envoie des rappels automatiques ?',
+        answer:
+          'Pas de SMS ni de WhatsApp automatiques aujourd’hui. Votre cliente reçoit un lien pour ajouter le rendez-vous à son agenda, et vous disposez d’un outil de relance que vous envoyez vous-même. C’est volontaire : un envoi automatique se facture au message, et nous préférons ne pas vous le répercuter.',
+      },
+      {
+        question: 'Puis-je annuler ou changer d’offre ?',
+        answer:
+          'Oui, à tout moment et sans engagement. Vos données et votre historique restent les vôtres.',
+      },
+      {
+        question: 'Je travaille seul, est-ce utile ?',
+        answer:
+          'Oui. Sans équipe, Mawid gère un rendez-vous à la fois et c’est exactement ce qu’il vous faut. Vous ajouterez des membres le jour où vous embaucherez.',
+      },
+      {
+        question: 'Dans quelles villes ?',
+        answer:
+          'Alger, Oran et Constantine. Écrivez-nous si votre ville n’y est pas encore.',
+      },
+    ],
+
+    finalTitle: 'Prêt à remplir votre agenda ?',
+    finalBody:
+      'Créez votre salon en trois minutes. Vous n’avez rien à payer tant que vous ne dépassez pas 30 rendez-vous par mois.',
   },
 } as const;
 

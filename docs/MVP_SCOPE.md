@@ -444,6 +444,33 @@ seule cliente à l'écran, un bouton, la suivante, avec une progression
 visible. La copie du presse-papier a un repli explicite, `navigator.clipboard`
 n'existant pas hors contexte sécurisé.
 
+**Lot 11 — Page de présentation aux salons.** ✅ Livré le 2026-09-20.
+`/pour-les-salons`, la seule page du produit qui s'adresse au gérant et non
+à sa cliente.
+
+**Pourquoi à la racine et non sous `/pro`.** Le back-office impose
+`robots: noindex` — or c'est exactement ici qu'il faut être trouvé sur
+Google. Et un prospect qui atterrit sur un écran de connexion referme
+l'onglet.
+
+**Slugs réservés.** La fiche d'un salon vit à la racine
+(`mawid.dz/karim-barber`). Un salon nommé « Pro » aurait donc obtenu le slug
+`pro` et serait devenu **inaccessible**, Next servant sa route statique en
+priorité sur `[slug]`. `common/slug.ts` maintient désormais une liste
+réservée (`pro`, `admin`, `r`, `pour-les-salons`, `api`, `sitemap`,
+`robots`, `manifest`), à tenir à jour avec les routes du frontend.
+
+**Écart entre le business plan et le code, à trancher.** §8.1 décrit trois
+offres dont la différence porte sur les fonctionnalités (multi-employés en
+Pro, caisse et stocks en Pro+). Le code ne conditionne **rien** au plan, à
+la seule exception du quota mensuel de réservations : un salon Free dispose
+aujourd'hui de la caisse, des stocks, des statistiques et du multi-employés.
+
+La page n'annonce donc que ce qui est vrai — Gratuit (30 RDV/mois) et Pro
+(3 000 DZD, illimité), toutes fonctionnalités incluses. **Pro+ n'y figure
+pas** : à 5 500 DZD, il n'aurait aujourd'hui rien de plus que Pro. Le
+vendre supposerait d'implémenter d'abord le conditionnement par offre.
+
 ## 6. Hors périmètre, quelle que soit la version
 
 - Application mobile native — le business plan lui-même tranche : « PWA

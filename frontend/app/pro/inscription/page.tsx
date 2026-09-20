@@ -37,6 +37,14 @@ export default async function RegisterPage() {
           {fr.pro.backToLogin}
         </Link>
       </p>
+      <p className="mt-3 text-center text-sm">
+        <Link
+          href="/pour-les-salons"
+          className="text-muted underline underline-offset-4"
+        >
+          {fr.pro.discoverMawid}
+        </Link>
+      </p>
     </main>
   );
 }
