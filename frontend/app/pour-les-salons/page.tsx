@@ -115,34 +115,41 @@ export default function ForSalonsPage() {
         </h2>
         <p className="mb-6 text-sm text-muted">{fr.landing.pricingNote}</p>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <PlanCard
-            name={fr.landing.planFreeName}
-            price={fr.landing.planFreePrice}
-            period={fr.landing.planFreePeriod}
-            limit={fr.landing.planFreeLimit}
-          />
-          <PlanCard
-            name={fr.landing.planProName}
-            price={fr.landing.planProPrice}
-            period={fr.landing.planProPeriod}
-            limit={fr.landing.planProLimit}
-            highlighted
-          />
-        </div>
+        {/* Trois colonnes sur grand écran, empilées sur téléphone. Le
+            deuxième palier est mis en avant : c'est celui vers lequel la
+            plupart des salons basculent, et une grille sans repère laisse le
+            lecteur choisir le moins cher par défaut. */}
+        <div className="grid gap-4 lg:grid-cols-3">
+          {fr.landing.plans.map((plan, index) => (
+            <article
+              key={plan.name}
+              className={`rounded-xl border bg-surface p-5 ${
+                index === 1 ? 'border-accent' : 'border-border'
+              }`}
+            >
+              {index === 1 && (
+                <p className="mb-2 text-xs font-medium text-accent">
+                  {fr.landing.popular}
+                </p>
+              )}
 
-        <div className="mt-4 rounded-xl border border-border bg-surface p-5">
-          <p className="mb-3 font-medium">{fr.landing.planIncluded}</p>
-          <ul className="grid gap-2 text-sm text-muted sm:grid-cols-2">
-            {fr.landing.planFeatures.map((feature) => (
-              <li key={feature} className="flex gap-2">
-                <span aria-hidden className="text-accent">
-                  ✓
-                </span>
-                {feature}
-              </li>
-            ))}
-          </ul>
+              <p className="font-medium">{plan.name}</p>
+              <p className="mt-2 text-3xl font-semibold">{plan.price}</p>
+              <p className="text-sm text-muted">{plan.period}</p>
+              <p className="mt-3 text-sm font-medium">{plan.pitch}</p>
+
+              <ul className="mt-4 space-y-2 text-sm">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex gap-2">
+                    <span aria-hidden className="shrink-0 text-accent">
+                      ✓
+                    </span>
+                    <span className="text-muted">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
         </div>
 
         {/* Le quota refuse des clientes réelles : l'annoncer ici évite que le
@@ -208,32 +215,5 @@ export default function ForSalonsPage() {
         </div>
       </section>
     </main>
-  );
-}
-
-function PlanCard({
-  name,
-  price,
-  period,
-  limit,
-  highlighted = false,
-}: {
-  name: string;
-  price: string;
-  period: string;
-  limit: string;
-  highlighted?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-xl border bg-surface p-5 ${
-        highlighted ? 'border-accent' : 'border-border'
-      }`}
-    >
-      <p className="font-medium">{name}</p>
-      <p className="mt-2 text-3xl font-semibold">{price}</p>
-      <p className="text-sm text-muted">{period}</p>
-      <p className="mt-3 text-sm">{limit}</p>
-    </div>
   );
 }
