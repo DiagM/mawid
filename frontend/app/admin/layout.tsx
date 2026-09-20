@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fr } from '@/lib/i18n/fr';
 import { requireAdminToken } from '@/lib/session';
+import { logoutAction } from '../pro/actions';
 
 export const metadata: Metadata = {
   title: { default: fr.admin.title, template: `%s · ${fr.admin.title}` },
@@ -60,6 +61,18 @@ export default async function AdminLayout({
             >
               {fr.admin.nav.publicSite}
             </Link>
+
+            {/* Même action que le back-office gérant : une seule session,
+                un seul cookie. En avoir deux laisserait la console ouverte
+                après une déconnexion faite depuis l'autre côté. */}
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="rounded-lg px-3 py-1.5 text-muted underline underline-offset-4 transition hover:text-fg"
+              >
+                {fr.pro.signOut}
+              </button>
+            </form>
           </nav>
         </div>
       </header>
