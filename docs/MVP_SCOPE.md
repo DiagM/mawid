@@ -108,6 +108,7 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Statistiques (`GET /api/stats/me`) | ✅ Fait — avec période comparative |
 | Quotas par offre (`GET /api/reservations/quota`) | ✅ Fait — Free 30 RDV/mois |
 | Fiches clients (`GET /api/clients`) | ✅ Fait — scopées par salon |
+| Segments de clientèle (`?segment=lapsed\|regulars`) | ✅ Fait |
 | Changement d'offre (`npm run set-plan`) | ✅ Fait |
 | Tests | 🟡 51 tests unitaires lancés en CI. Pas encore de suite d'intégration automatisée sur base réelle (l'isolation A/B a été vérifiée manuellement sur deux salons). |
 
@@ -135,6 +136,7 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Statistiques `/pro/statistiques` | ✅ Fait — 7/30/90 jours |
 | Fiches clients `/pro/clients` et `/pro/clients/[id]` | ✅ Fait |
 | Bandeau de quota (alerte à 80 %, blocage à 100 %) | ✅ Fait |
+| Campagnes `/pro/campagnes` | ✅ Fait — liens `wa.me` personnalisés |
 
 ## 5. Ordre de construction
 
@@ -285,7 +287,22 @@ laisse le temps de réagir, « limite atteinte » signale que des clients sont
 déjà refusés. Confondre les deux ferait manquer la fenêtre où le gérant peut
 encore agir. Plus les pages clients, liste et fiche détaillée.
 
-Reste : campagnes `wa.me` manuelles, mise en avant.
+Campagnes livrées le 2026-09-20. Mawid n'envoie rien : le gérant écrit son
+message une fois, `{prenom}` est remplacé automatiquement, et chaque client
+ouvre en un clic dans sa propre conversation WhatsApp. Ce qui est supprimé,
+c'est le travail répétitif — pas l'envoi, qui reste le sien et qui est aussi
+ce qui donne au message une chance d'être lu.
+
+Segment `lapsed` par défaut : c'est la relance qui rapporte le plus. Il
+exclut les clients ayant déjà un rendez-vous à venir — les relancer serait à
+côté de la plaque — et ceux qui ne sont jamais venus.
+
+Limite assumée : le suivi des envois vit en mémoire de la page. Il sert à ne
+pas perdre sa place dans une liste de trente noms pendant une session, pas à
+constituer un historique. C'est dit explicitement à l'écran plutôt que
+laissé découvrir après un rechargement.
+
+Reste : mise en avant.
 
 **Lot 7 — V4.** Caisse, stocks, multi-villes, abstraction paiement.
 

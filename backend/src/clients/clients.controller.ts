@@ -22,7 +22,13 @@ export class ClientsController {
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: ClientsQueryDto,
   ) {
-    return this.clientsService.findMine(user.id, query.q);
+    return this.clientsService.findMine(
+      user.id,
+      query.q,
+      100,
+      query.segment,
+      query.lapsedDays,
+    );
   }
 
   @Get(':id')

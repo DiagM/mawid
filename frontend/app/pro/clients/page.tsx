@@ -14,7 +14,7 @@ export default async function ClientsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const query = params.q?.trim() ?? '';
 
-  const clients = await getClients(token, query || undefined);
+  const clients = await getClients(token, { query: query || undefined });
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-6">

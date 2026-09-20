@@ -306,11 +306,24 @@ export interface ClientRow {
   nextVisit: string | null;
 }
 
+/**
+ * Segments de clientèle.
+ * `lapsed` exclut les clients ayant déjà un rendez-vous à venir : les
+ * relancer serait à côté de la plaque, ils reviennent déjà.
+ */
+export type ClientSegment = 'all' | 'lapsed' | 'regulars';
+
 export function getClients(
   token: string,
-  query?: string,
+  options: { query?: string; segment?: ClientSegment } = {},
 ): Promise<{ total: number; items: ClientRow[] }> {
-  const suffix = query ? `?q=${encodeURIComponent(query)}` : '';
+  const params = new URLSearchParams();
+  if (options.query) params.set('q', options.query);
+  if (options.segment && options.segment !== 'all') {
+    params.set('segment', options.segment);
+  }
+
+  const suffix = params.toString() ? `?${params.toString()}` : '';
   return apiFetch<{ total: number; items: ClientRow[] }>(
     `/clients${suffix}`,
     { token },

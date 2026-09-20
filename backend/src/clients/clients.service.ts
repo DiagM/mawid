@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { utcToLocalDate } from '../common/time/algiers-time';
+import type { ClientSegment } from './dto/clients-query.dto';
+
+/** Nombre de visites à partir duquel un client compte comme fidèle. */
+const REGULAR_VISITS_THRESHOLD = 3;
 
 /**
  * ============================================
@@ -26,7 +30,13 @@ export class ClientsService {
    * Triés par dernière visite : un gérant cherche « qui n'est pas revenu
    * depuis longtemps » bien plus souvent qu'un nom précis.
    */
-  async findMine(userId: string, query?: string, limit = 100) {
+  async findMine(
+    userId: string,
+    query?: string,
+    limit = 100,
+    segment: ClientSegment = 'all',
+    lapsedDays = 60,
+  ) {
     const salon = await this.getOwnedSalon(userId);
     const search = query?.trim();
 
@@ -116,7 +126,31 @@ export class ClientsService {
       byClient.set(reservation.clientId, row);
     }
 
+    const lapsedBefore = new Date(
+      now.getTime() - lapsedDays * 24 * 60 * 60 * 1000,
+    );
+
+    const matchesSegment = (row: Row): boolean => {
+      switch (segment) {
+        case 'lapsed':
+          // Un client sans aucune visite honorée n'est pas « perdu de vue » :
+          // il n'est jamais venu. Et un client avec un RDV à venir revient
+          // déjà, le relancer serait à côté de la plaque.
+          return (
+            row.visits > 0 &&
+            row.nextVisit === null &&
+            row.lastVisit !== null &&
+            row.lastVisit < lapsedBefore
+          );
+        case 'regulars':
+          return row.visits >= REGULAR_VISITS_THRESHOLD;
+        case 'all':
+          return true;
+      }
+    };
+
     const items = [...byClient.values()]
+      .filter(matchesSegment)
       .sort((a, b) => {
         // Sans visite honorée, on ne peut pas trier par dernière venue :
         // ces clients passent après ceux qu'on a déjà vus.
@@ -138,7 +172,7 @@ export class ClientsService {
         nextVisit: row.nextVisit ? utcToLocalDate(row.nextVisit) : null,
       }));
 
-    return { total: byClient.size, items };
+    return { total: items.length, items };
   }
 
   /**

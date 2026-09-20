@@ -214,6 +214,7 @@ export const fr = {
       reviews: 'Avis',
       stats: 'Statistiques',
       clients: 'Clients',
+      campaigns: 'Campagnes',
       blocked: 'Indisponibilités',
     },
 
@@ -243,6 +244,36 @@ export const fr = {
       upgrade: 'Contactez Mawid pour passer à l’offre Pro.',
       used: '{used} / {limit} réservations ce mois-ci',
       unlimited: 'Réservations illimitées',
+    },
+
+    campaigns: {
+      title: 'Campagnes WhatsApp',
+      help:
+        'Mawid n’envoie rien à votre place. Vous écrivez votre message une fois, et vous l’envoyez ensuite client par client, depuis votre WhatsApp.',
+      segment: 'À qui écrire',
+      segmentAll: 'Tous mes clients',
+      segmentLapsed: 'Pas revenus depuis 2 mois',
+      segmentLapsedHelp:
+        'Ceux qui n’ont aucun rendez-vous à venir. C’est la relance qui rapporte le plus.',
+      segmentRegulars: 'Mes fidèles (3 visites et plus)',
+      segmentRegularsHelp: 'À qui annoncer une nouveauté ou une promotion.',
+      message: 'Votre message',
+      messagePlaceholder:
+        'Bonjour {prenom}, cela fait un moment ! On vous réserve une place cette semaine ?',
+      messageHelp:
+        'Écrivez {prenom} là où le prénom du client doit apparaître.',
+      recipients: 'destinataire',
+      recipientsPlural: 'destinataires',
+      send: 'Ouvrir WhatsApp',
+      sent: 'Envoyé',
+      markSent: 'Marquer envoyé',
+      progress: '{done} sur {total} envoyés',
+      empty: 'Aucun client dans ce segment.',
+      emptyHelp: 'Essayez un autre segment.',
+      noMessage: 'Écrivez votre message pour faire apparaître les liens.',
+      notPersisted:
+        'Le suivi des envois n’est pas conservé si vous rechargez la page.',
+      preview: 'Aperçu pour {name}',
     },
 
     clients: {
