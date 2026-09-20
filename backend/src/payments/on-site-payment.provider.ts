@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import type {
-  DepositRequest,
   DepositResult,
   DepositStatus,
   PaymentProvider,
@@ -21,11 +20,14 @@ import type {
 export class OnSitePaymentProvider implements PaymentProvider {
   readonly name = 'on-site';
 
-  requiresDeposit(_request: DepositRequest): boolean {
+  // Les parametres de l'interface sont volontairement omis : TypeScript
+  // autorise une implementation a en declarer moins, et cette version n'a
+  // besoin d'aucune donnee pour repondre.
+  requiresDeposit(): boolean {
     return false;
   }
 
-  initiateDeposit(_request: DepositRequest): Promise<DepositResult> {
+  initiateDeposit(): Promise<DepositResult> {
     return Promise.resolve({
       status: 'NOT_REQUIRED',
       // Pas de redirection : il n'y a nulle part ou aller, le client paie
@@ -35,7 +37,7 @@ export class OnSitePaymentProvider implements PaymentProvider {
     });
   }
 
-  getStatus(_reservationId: string): Promise<DepositStatus> {
+  getStatus(): Promise<DepositStatus> {
     return Promise.resolve('NOT_REQUIRED');
   }
 }
