@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { configureApp } from './app-setup';
 
 /**
  * Nombre de proxys de confiance devant l'application.
@@ -85,17 +85,9 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Préfixe global /api pour toutes les routes (ex: /api/salons)
-  app.setGlobalPrefix('api');
-
-  // Validation automatique de tous les DTOs avec class-validator
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true, // Supprime les champs non déclarés dans le DTO
-      forbidNonWhitelisted: true, // Refuse les requêtes avec des champs inconnus
-      transform: true, // Convertit les types primitifs auto (string → number)
-    }),
-  );
+  // Préfixe /api et ValidationPipe, partagés avec les tests de bout en bout
+  // pour qu'ils exercent exactement la même application.
+  configureApp(app);
 
   const port = process.env.BACKEND_PORT ?? 3001;
   await app.listen(port, '0.0.0.0');

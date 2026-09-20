@@ -34,8 +34,10 @@ strict que la moyenne sur la sécurité, les tests et la lisibilité.
 - **Frontend** : Next.js (App Router, actuellement quasi vide — starter par
   défaut), React 19, Tailwind CSS v4, TypeScript.
 - **Infra dev** : Docker Compose (`postgres`, `backend`, `frontend`).
-- **CI** : GitHub Actions (`.github/workflows/ci.yml`) — lint + build +
-  image Docker pour chaque service, **sans exécution des tests** actuellement.
+- **CI** : GitHub Actions (`.github/workflows/ci.yml`) — lint, build, tests
+  unitaires, tests de bout en bout et image Docker pour chaque service. Le job
+  backend démarre un service PostgreSQL 16 et applique les migrations sur une
+  base jetable `mawid_test` avant les E2E.
 
 Pas de Supabase, pas de RLS, pas de WhatsApp Cloud API, pas d'OTP SMS dans le
 code à ce jour — ne pas supposer leur présence en lisant d'anciennes notes de
@@ -118,9 +120,9 @@ Pour toute nouvelle fonctionnalité touchant aux données :
 - Écrire la migration Prisma et la logique de scoping par `ownerId`/`salonId`
   **avant** le reste du code applicatif.
 - Écrire au moins un test qui vérifie l'isolation entre deux salons.
-- Lancer `npm run lint`, `npm run build`, `npm run test` (backend) avant de
-  considérer la tâche terminée. **Ajouter les tests à la CI** si ce n'est pas
-  déjà fait pour ce module — `ci.yml` ne lance pas encore `npm run test`.
+- Lancer `npm run lint`, `npm run build`, `npm run test` et
+  `npm run test:e2e` (backend) avant de considérer la tâche terminée. Les
+  quatre tournent déjà en CI : une tâche qui casse l'un d'eux casse `main`.
 
 ## 6. Commandes utiles
 
@@ -133,8 +135,9 @@ docker compose logs -f backend
 npm run start:dev        # dev avec watch
 npm run lint
 npm run build
-npm run test              # tests unitaires — pas encore dans la CI
-npm run test:e2e
+npm run test              # tests unitaires (doubles, aucune base)
+npm run test:e2e          # bout en bout — exige la base mawid_test,
+                          # voir backend/test/README.md
 npx prisma migrate dev    # nouvelle migration
 npx prisma studio         # explorer la base
 

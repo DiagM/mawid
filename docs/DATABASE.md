@@ -113,9 +113,17 @@ npx prisma studio
   modification manuelle du schéma de la base de production hors migration
   versionnée.
 - La CI (`ci.yml`) exécute `npx prisma generate` avec une `DATABASE_URL`
-  factice (pas de vraie connexion) uniquement pour que le typage TypeScript
-  soit disponible au lint/build — elle n'applique aucune migration. Garder ce
-  découplage : ne pas faire dépendre le build CI d'une vraie base de données.
+  factice pour rendre le typage disponible au lint et au build, qui n'ont
+  besoin d'aucune connexion.
+- **Depuis les tests de bout en bout, la CI démarre aussi un vrai PostgreSQL**
+  (service `postgres:16-alpine`) et y applique `prisma migrate deploy` sur une
+  base jetable `mawid_test`. Cette décision revient sur le découplage total
+  d'origine, et c'est assumé : trois garanties du produit ne vivent pas dans
+  le code TypeScript et aucun double ne peut les simuler — la contrainte
+  d'exclusion anti-double-réservation, l'extension `unaccent`, et le fait que
+  les migrations s'appliquent encore proprement. Les faire vérifier ailleurs
+  qu'en CI revenait à ne pas les vérifier. Le lint et le build, eux, restent
+  indépendants de la base. Voir `backend/test/README.md`.
 
 ## 5. Index déjà en place (à connaître avant d'ajouter une requête)
 

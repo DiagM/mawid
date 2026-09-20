@@ -21,6 +21,33 @@ jobs:
       run:
         working-directory: ./backend
 
+    env:
+      # Base jetable des tests de bout en bout. Le nom DOIT finir par "_test" :
+      # la suite vide les tables entre chaque scénario et refuse de tourner sur
+      # une base qui ne porte pas ce suffixe (backend/test/setup-e2e.ts).
+      TEST_DATABASE_URL: postgresql://mawid:mawid_ci_password@localhost:5432/mawid_test?schema=public
+
+    services:
+      # Les tests E2E ont besoin d'un VRAI PostgreSQL : la protection contre la
+      # double réservation est une contrainte d'exclusion qui vit en base, et
+      # aucun double ne peut la simuler. C'est aussi le seul endroit où l'on
+      # vérifie que `btree_gist` et `unaccent` s'installent bien.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: mawid
+          # Mot de passe d'un conteneur jetable, joignable seulement depuis ce
+          # runner : ce n'est pas un secret (docs/SECURITY.md §5).
+          POSTGRES_PASSWORD: mawid_ci_password
+          POSTGRES_DB: mawid_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mawid -d mawid_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,11 +77,24 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Tests unitaires : ils n'ont besoin d'aucune base, PrismaService est
-      # remplacé par un double dans chaque suite. On garde donc la CI
-      # découplée de Postgres (cf. docs/DATABASE.md §4).
+      # Tests unitaires : PrismaService est remplacé par un double dans chaque
+      # suite, ils tournent donc sans base et échouent vite. Lancés avant les
+      # E2E pour que l'erreur la plus simple ressorte en premier.
       - name: Test
         run: npm run test
+
+      # Applique le schéma réel, extensions comprises. Si une migration ne
+      # passe plus, la CI le dit ici plutôt qu'en production.
+      - name: Migrate test database
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+
+      # Tests de bout en bout contre l'application complète et la vraie base :
+      # isolation entre salons, contrainte anti-double-réservation, quotas,
+      # rate limiting. Voir backend/test/README.md.
+      - name: Test (e2e)
+        run: npm run test:e2e
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
