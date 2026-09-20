@@ -9,6 +9,7 @@ import {
 import { fr } from '@/lib/i18n/fr';
 import { formatLongDate, formatPrice } from '@/lib/format';
 import { salonPhoneLink } from '@/lib/booking-share';
+import { RescheduleForm } from './reschedule-form';
 
 export function ManageReservation({
   reservation: initial,
@@ -28,6 +29,8 @@ export function ManageReservation({
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [rescheduling, setRescheduling] = useState(false);
+  const [moved, setMoved] = useState(false);
 
   const isCanceled = reservation.status === 'CANCELED';
 
@@ -127,13 +130,43 @@ export function ManageReservation({
                 </div>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => setConfirming(true)}
-                className="h-12 w-full rounded-xl border border-danger font-medium text-danger"
-              >
-                {fr.manage.cancelAction}
-              </button>
+              <div className="space-y-2">
+                {/* Déplacer est proposé AVANT annuler : c'est presque
+                    toujours ce que la cliente veut vraiment, et l'annulation
+                    lui faisait jusqu'ici perdre son créneau sans recours. */}
+                <button
+                  type="button"
+                  onClick={() => setRescheduling(true)}
+                  className="h-12 w-full rounded-xl border border-accent font-medium text-accent"
+                >
+                  {fr.manage.reschedule}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirming(true)}
+                  className="h-12 w-full rounded-xl border border-danger font-medium text-danger"
+                >
+                  {fr.manage.cancelAction}
+                </button>
+              </div>
+            )}
+
+            {moved && (
+              <p className="mt-4 rounded-xl bg-accent-soft p-3 text-sm text-accent">
+                {fr.manage.rescheduleDone}
+              </p>
+            )}
+
+            {rescheduling && (
+              <RescheduleForm
+                token={token}
+                onDone={(updated) => {
+                  setReservation(updated);
+                  setRescheduling(false);
+                  setMoved(true);
+                }}
+                onCancel={() => setRescheduling(false)}
+              />
             )}
 
             {error && (

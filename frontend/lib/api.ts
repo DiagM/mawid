@@ -330,3 +330,32 @@ export function cancelReservationByToken(
     { method: 'DELETE' },
   );
 }
+
+/**
+ * Créneaux proposés pour DÉPLACER un rendez-vous.
+ *
+ * Route distincte de la disponibilité publique : celle-ci exclut le
+ * rendez-vous lui-même des intervalles occupés, sans quoi il se bloquerait
+ * et un décalage de quinze minutes serait refusé. L'exclusion est déduite du
+ * token, jamais acceptée depuis l'URL.
+ */
+export function getRescheduleOptions(
+  token: string,
+  date: string,
+): Promise<Availability> {
+  const query = new URLSearchParams({ date });
+
+  return apiFetch<Availability>(
+    `/reservations/token/${encodeURIComponent(token)}/availability?${query.toString()}`,
+  );
+}
+
+export function rescheduleReservationByToken(
+  token: string,
+  startsAt: string,
+): Promise<ReservationView> {
+  return apiFetch<ReservationView>(
+    `/reservations/token/${encodeURIComponent(token)}/reschedule`,
+    { method: 'PATCH', body: { startsAt } },
+  );
+}

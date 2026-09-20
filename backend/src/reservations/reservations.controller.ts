@@ -12,6 +12,10 @@ import { Throttle } from '@nestjs/throttler';
 import { ReservationsService } from './reservations.service';
 import { AgendaQueryDto } from './dto/agenda-query.dto';
 import { UpdateReservationStatusDto } from './dto/update-reservation-status.dto';
+import {
+  RescheduleAvailabilityQueryDto,
+  RescheduleReservationDto,
+} from './dto/reschedule-reservation.dto';
 import { TOKEN_THROTTLE } from '../common/throttling/throttle-config';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -65,6 +69,21 @@ export class ReservationsController {
     return this.reservationsService.updateStatus(user.id, id, dto);
   }
 
+  /**
+   * PATCH /api/reservations/:id/reschedule
+   * Déplace un rendez-vous depuis l'agenda. C'est le cas le plus fréquent en
+   * pratique : c'est le salon qui appelle pour décaler, pas la cliente.
+   */
+  @Patch(':id/reschedule')
+  @UseGuards(JwtAuthGuard)
+  reschedule(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() dto: RescheduleReservationDto,
+  ) {
+    return this.reservationsService.rescheduleByManager(user.id, id, dto);
+  }
+
   // ============================================
   // Gestion par le client, via son token (public)
   // ============================================
@@ -90,5 +109,36 @@ export class ReservationsController {
   @Throttle(TOKEN_THROTTLE)
   cancelByToken(@Param('token') token: string) {
     return this.reservationsService.cancelByToken(token);
+  }
+
+  /**
+   * GET /api/reservations/token/:token/availability?date=YYYY-MM-DD
+   * Créneaux proposés pour déplacer CE rendez-vous. Le sien est exclu des
+   * intervalles occupés, sinon il se bloquerait lui-même.
+   */
+  @Get('token/:token/availability')
+  @Throttle(TOKEN_THROTTLE)
+  rescheduleOptions(
+    @Param('token') token: string,
+    @Query() query: RescheduleAvailabilityQueryDto,
+  ) {
+    return this.reservationsService.availabilityForReschedule(
+      token,
+      query.date,
+    );
+  }
+
+  /**
+   * PATCH /api/reservations/token/:token/reschedule
+   * La cliente déplace son rendez-vous. Le token reste le même : le lien
+   * qu'elle a déjà dans WhatsApp continue de fonctionner.
+   */
+  @Patch('token/:token/reschedule')
+  @Throttle(TOKEN_THROTTLE)
+  rescheduleByToken(
+    @Param('token') token: string,
+    @Body() dto: RescheduleReservationDto,
+  ) {
+    return this.reservationsService.rescheduleByToken(token, dto);
   }
 }

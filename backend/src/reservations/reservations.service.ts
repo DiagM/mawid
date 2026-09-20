@@ -10,6 +10,7 @@ import { AvailabilityService } from './availability.service';
 import { getBookingRules } from './booking-rules';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationStatusDto } from './dto/update-reservation-status.dto';
+import { RescheduleReservationDto } from './dto/reschedule-reservation.dto';
 import {
   addMinutes,
   localDayRangeUtc,
@@ -55,6 +56,30 @@ function isOverlapViolation(error: unknown): boolean {
       record.message.includes('reservations_no_overlap')
     );
   });
+}
+
+/** Tout ce qu'un report a besoin de connaître d'un rendez-vous. */
+const RESCHEDULABLE_SELECT = {
+  id: true,
+  salonId: true,
+  status: true,
+  startsAt: true,
+  salon: { select: { slug: true } },
+  reservationPrestations: {
+    select: { prestationId: true, durationMinutesSnapshot: true },
+  },
+} as const;
+
+interface ReschedulableReservation {
+  id: string;
+  salonId: string;
+  status: string;
+  startsAt: Date;
+  salon: { slug: string };
+  reservationPrestations: {
+    prestationId: string;
+    durationMinutesSnapshot: number;
+  }[];
 }
 
 @Injectable()
@@ -208,6 +233,166 @@ export class ReservationsService {
     });
 
     return { status: 'CANCELED' as const };
+  }
+
+  // ============================================
+  // Report d'un rendez-vous
+  // ============================================
+
+  /**
+   * Créneaux proposés pour déplacer un rendez-vous existant.
+   *
+   * Route dédiée plutôt qu'un paramètre `excludeReservationId` sur la
+   * disponibilité publique : celle-ci accepterait alors un identifiant
+   * arbitraire, et n'importe qui pourrait faire apparaître des créneaux
+   * fantômes. Ici l'exclusion est déduite du token, donc de son porteur.
+   */
+  async availabilityForReschedule(token: string, date: string) {
+    const reservation = await this.loadReschedulable(token);
+
+    return this.availability.getAvailability(
+      reservation.salon.slug,
+      date,
+      reservation.reservationPrestations.map((line) => line.prestationId),
+      new Date(),
+      undefined,
+      reservation.id,
+    );
+  }
+
+  /**
+   * Déplace un rendez-vous, par son token.
+   *
+   * On **met à jour** la réservation plutôt que d'annuler et recréer. Trois
+   * raisons : le `cancellationToken` reste valable, donc le lien déjà envoyé
+   * sur WhatsApp continue de fonctionner ; les snapshots de prix ne sont pas
+   * rejoués, donc déplacer ne renégocie rien ; et le quota mensuel du salon
+   * n'est pas consommé une seconde fois, puisqu'il compte les créations.
+   */
+  async rescheduleByToken(token: string, dto: RescheduleReservationDto) {
+    const reservation = await this.loadReschedulable(token);
+
+    return this.applyReschedule(reservation, dto);
+  }
+
+  /**
+   * Déplace un rendez-vous depuis l'agenda du gérant.
+   *
+   * Le cas le plus fréquent en pratique : c'est le salon qui appelle pour
+   * décaler, pas la cliente. Le salon est retrouvé par `ownerId`, jamais par
+   * un identifiant fourni (CLAUDE.md §3.2).
+   */
+  async rescheduleByManager(
+    userId: string,
+    reservationId: string,
+    dto: RescheduleReservationDto,
+  ) {
+    const salon = await this.getOwnedSalon(userId);
+
+    const reservation = await this.prisma.reservation.findUnique({
+      where: { id: reservationId },
+      select: RESCHEDULABLE_SELECT,
+    });
+
+    if (!reservation) {
+      throw new NotFoundException('Réservation introuvable');
+    }
+
+    if (reservation.salonId !== salon.id) {
+      throw new ForbiddenException("Vous n'avez pas accès à cette réservation");
+    }
+
+    this.assertReschedulable(reservation);
+
+    return this.applyReschedule(reservation, dto);
+  }
+
+  /** Charge un rendez-vous déplaçable depuis son token. */
+  private async loadReschedulable(token: string) {
+    const reservation = await this.prisma.reservation.findUnique({
+      where: { cancellationToken: token },
+      select: RESCHEDULABLE_SELECT,
+    });
+
+    if (!reservation) {
+      throw new NotFoundException('Réservation introuvable');
+    }
+
+    this.assertReschedulable(reservation);
+
+    return reservation;
+  }
+
+  /**
+   * Un rendez-vous ne se déplace que s'il est encore à venir et confirmé.
+   *
+   * Déplacer un rendez-vous passé réécrirait l'histoire ; en déplacer un
+   * annulé ou déjà qualifié fausserait les statistiques du salon.
+   */
+  private assertReschedulable(reservation: { status: string; startsAt: Date }) {
+    if (reservation.status !== 'CONFIRMED') {
+      throw new BadRequestException(
+        'Seul un rendez-vous confirmé peut être déplacé.',
+      );
+    }
+
+    if (reservation.startsAt.getTime() <= Date.now()) {
+      throw new BadRequestException(
+        'Ce rendez-vous est passé. Contactez le salon.',
+      );
+    }
+  }
+
+  private async applyReschedule(
+    reservation: ReschedulableReservation,
+    dto: RescheduleReservationDto,
+  ) {
+    const startsAt = new Date(dto.startsAt);
+    if (Number.isNaN(startsAt.getTime())) {
+      throw new BadRequestException('Créneau invalide');
+    }
+
+    // La durée vient des snapshots et non du catalogue actuel : une
+    // prestation raccourcie depuis la réservation ne doit pas amputer le
+    // rendez-vous déjà convenu.
+    const durationMinutes = reservation.reservationPrestations.reduce(
+      (total, line) => total + line.durationMinutesSnapshot,
+      0,
+    );
+
+    const context = await this.availability.resolveContext(
+      reservation.salon.slug,
+      reservation.reservationPrestations.map((line) => line.prestationId),
+    );
+
+    const employeeId = await this.availability.resolveResourceForSlot(
+      { ...context, totalDurationMinutes: durationMinutes },
+      startsAt,
+      new Date(),
+      dto.employeeId,
+      reservation.id,
+    );
+
+    try {
+      const updated = await this.prisma.reservation.update({
+        where: { id: reservation.id },
+        data: {
+          startsAt,
+          endsAt: addMinutes(startsAt, durationMinutes),
+          employeeId,
+        },
+        include: { reservationPrestations: true },
+      });
+
+      return this.toClientView(updated, false);
+    } catch (error) {
+      if (isOverlapViolation(error)) {
+        throw new ConflictException(
+          "Ce créneau vient d'être réservé. Choisissez-en un autre.",
+        );
+      }
+      throw error;
+    }
   }
 
   // ============================================

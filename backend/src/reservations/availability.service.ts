@@ -162,6 +162,7 @@ export class AvailabilityService {
     prestationIds: string[],
     now: Date = new Date(),
     employeeId?: string,
+    excludeReservationId?: string,
   ): Promise<AvailabilityResult> {
     const context = await this.resolveContext(slug, prestationIds);
     this.assertDateWithinHorizon(date, now);
@@ -173,6 +174,7 @@ export class AvailabilityService {
       context.totalDurationMinutes,
       now,
       employeeId,
+      excludeReservationId,
     );
 
     return {
@@ -197,6 +199,7 @@ export class AvailabilityService {
     startsAt: Date,
     now: Date = new Date(),
     employeeId?: string,
+    excludeReservationId?: string,
   ): Promise<string | null> {
     const date = utcToLocalDate(startsAt);
     this.assertDateWithinHorizon(date, now);
@@ -236,7 +239,11 @@ export class AvailabilityService {
     }
 
     const resources = await this.loadResources(context.salonId, employeeId);
-    const busy = await this.loadBusyIntervals(context.salonId, date);
+    const busy = await this.loadBusyIntervals(
+      context.salonId,
+      date,
+      excludeReservationId,
+    );
 
     const free = resources.find((resource) =>
       this.isResourceFree(resource, busy, startsAt, endsAt),
@@ -260,6 +267,7 @@ export class AvailabilityService {
     durationMinutes: number,
     now: Date,
     employeeId?: string,
+    excludeReservationId?: string,
   ): Promise<Date[]> {
     const window = this.openingWindow(openingHours, date);
     if (!window) {
@@ -268,7 +276,11 @@ export class AvailabilityService {
 
     const rules = getBookingRules();
     const resources = await this.loadResources(salonId, employeeId);
-    const busy = await this.loadBusyIntervals(salonId, date);
+    const busy = await this.loadBusyIntervals(
+      salonId,
+      date,
+      excludeReservationId,
+    );
     const earliestStart = new Date(
       now.getTime() + rules.minLeadMinutes * 60_000,
     );
@@ -350,6 +362,7 @@ export class AvailabilityService {
   private async loadBusyIntervals(
     salonId: string,
     date: string,
+    excludeReservationId?: string,
   ): Promise<BusyInterval[]> {
     const { start, end } = localDayRangeUtc(date);
     const from = new Date(start.getTime() - 24 * 60 * 60_000);
@@ -362,6 +375,10 @@ export class AvailabilityService {
           status: 'CONFIRMED',
           startsAt: { lt: to },
           endsAt: { gt: from },
+          // Un rendez-vous qu'on déplace ne doit pas se bloquer lui-même :
+          // sans cette exclusion, le décaler de quinze minutes serait refusé
+          // pour cause de chevauchement… avec sa propre ancienne place.
+          ...(excludeReservationId && { id: { not: excludeReservationId } }),
         },
         select: { startsAt: true, endsAt: true, employeeId: true },
       }),

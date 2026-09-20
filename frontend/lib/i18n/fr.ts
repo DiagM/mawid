@@ -137,6 +137,13 @@ export const fr = {
   },
 
   manage: {
+    reschedule: 'Déplacer mon rendez-vous',
+    rescheduleTitle: 'Choisir un autre créneau',
+    rescheduleDay: 'Jour',
+    rescheduleNoSlot: 'Aucun créneau libre ce jour-là.',
+    rescheduleKeep: 'Garder mon créneau',
+    rescheduleDone: 'Votre rendez-vous a été déplacé.',
+    rescheduleTaken: 'Ce créneau vient d’être pris. Choisissez-en un autre.',
     title: 'Votre rendez-vous',
     status: {
       CONFIRMED: 'Confirmé',
