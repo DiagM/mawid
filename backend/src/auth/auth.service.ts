@@ -12,6 +12,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtPayload } from './types/jwt-payload.type';
 import { uniqueSlug } from '../common/slug';
+import { DEFAULT_CITY } from '../common/cities';
 
 /**
  * Horaires par défaut d'un salon qui vient de s'inscrire : ouvert tous les
@@ -180,7 +181,7 @@ export class AuthService {
           name: dto.salonName,
           addressLine: dto.addressLine,
           district: dto.district,
-          city: 'Alger',
+          city: dto.city ?? DEFAULT_CITY,
           contactPhone,
           isWomenOnly: dto.isWomenOnly ?? false,
           openingHours: DEFAULT_OPENING_HOURS,

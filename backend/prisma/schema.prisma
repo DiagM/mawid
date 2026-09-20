@@ -111,8 +111,10 @@ model Salon {
   prestations  Prestation[]
   employees    Employee[]
   blockedSlots BlockedSlot[]
-  reservations Reservation[]
-  reviews      Review[]
+  reservations  Reservation[]
+  reviews       Review[]
+  cashMovements CashMovement[]
+  products      Product[]
 
   @@index([slug])
   @@index([ownerId])
@@ -155,9 +157,10 @@ model Employee {
 
   // Relations
   salon        Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
-  reservations Reservation[]
-  blockedSlots BlockedSlot[]
-  reviews      Review[]
+  reservations  Reservation[]
+  blockedSlots  BlockedSlot[]
+  reviews       Review[]
+  cashMovements CashMovement[]
 
   @@index([salonId])
   @@index([salonId, isActive])
@@ -298,6 +301,7 @@ model Reservation {
 
   reservationPrestations ReservationPrestation[]
   review                 Review?
+  cashMovement           CashMovement?
 
   @@index([salonId, startsAt])
   @@index([employeeId, startsAt])
@@ -312,6 +316,112 @@ enum ReservationStatus {
   HONORED // Client est venu, prestation effectuée
   NO_SHOW // Client ne s'est pas présenté
   CANCELED // Annulé (par le client ou le gérant)
+}
+
+// ============================================
+// CashMovement — Caisse du salon (V4)
+// ============================================
+// Le module caisse répond à un besoin que Mawid ne couvrait pas : un salon
+// encaisse aussi des clients SANS rendez-vous en ligne. Ne compter que les
+// réservations Mawid donnerait au gérant un chiffre systématiquement faux,
+// donc inutilisable — et il tiendrait son vrai cahier à côté.
+//
+// Une vente peut être rattachée à une réservation (`reservationId`), ce qui
+// évite de la ressaisir, ou être totalement libre pour un client de passage.
+model CashMovement {
+  id      String           @id @default(cuid())
+  salonId String
+  type    CashMovementType
+
+  // Toujours POSITIF : c'est `type` qui porte le sens. Autoriser des montants
+  // négatifs ouvrirait la porte à une dépense enregistrée en recette et à des
+  // totaux impossibles à auditer.
+  amountCents Int
+  label       String
+  method      PaymentMethod @default(CASH)
+
+  // Rattachement facultatif à un rendez-vous. Unique : un même rendez-vous
+  // ne peut pas être encaissé deux fois.
+  reservationId String? @unique
+  employeeId    String?
+
+  /** Date de l'encaissement, distincte de la date de saisie. */
+  occurredAt DateTime
+  createdAt  DateTime @default(now())
+
+  // Relations
+  salon       Salon        @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  employee    Employee?    @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@index([salonId, occurredAt])
+  @@map("cash_movements")
+}
+
+enum CashMovementType {
+  SALE // Encaissement
+  EXPENSE // Dépense (achat de produits, charges…)
+}
+
+enum PaymentMethod {
+  CASH // Espèces — l'écrasante majorité des paiements en salon
+  CARD // Carte (terminal du salon, pas Mawid)
+  TRANSFER // Virement
+}
+
+// ============================================
+// Product — Stock du salon (V4)
+// ============================================
+// Shampoings, teintures, consommables. La quantité est dénormalisée sur le
+// produit : elle est lue en permanence (liste, alertes de seuil) alors que
+// les mouvements ne servent qu'à l'historique. Elle est mise à jour dans la
+// même transaction que le mouvement, jamais séparément.
+model Product {
+  id      String @id @default(cuid())
+  salonId String
+  name    String
+
+  /** Unité affichée : « flacon », « boîte », « ml »… */
+  unit String?
+
+  /** Prix d'achat unitaire, en centimes DZD entiers. */
+  costCents Int?
+
+  quantity Int @default(0)
+
+  /** En dessous de ce seuil, le produit est signalé comme à réapprovisionner. */
+  lowStockThreshold Int @default(0)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  salon     Salon           @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  movements StockMovement[]
+
+  @@index([salonId, isActive])
+  @@map("products")
+}
+
+// ============================================
+// StockMovement — Entrée ou sortie de stock (V4)
+// ============================================
+model StockMovement {
+  id        String @id @default(cuid())
+  productId String
+
+  /** Signé : positif pour une entrée, négatif pour une sortie. */
+  delta  Int
+  reason String?
+
+  occurredAt DateTime
+  createdAt  DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, occurredAt])
+  @@map("stock_movements")
 }
 
 // ============================================

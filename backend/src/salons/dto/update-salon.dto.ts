@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsIn,
   IsLatitude,
   IsLongitude,
   IsOptional,
@@ -10,6 +11,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { OpeningHoursDto } from './opening-hours.dto';
+import { CITIES, type City } from '../../common/cities';
 
 /**
  * Champs modifiables d'un salon par son gérant.
@@ -38,6 +40,11 @@ export class UpdateSalonDto {
   @MinLength(2)
   @MaxLength(100)
   district?: string;
+
+  /** Ville (V4 : multi-villes). Liste fermée, voir common/cities.ts. */
+  @IsOptional()
+  @IsIn(CITIES)
+  city?: City;
 
   @IsOptional()
   @IsLatitude({ message: 'Latitude invalide' })

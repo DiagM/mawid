@@ -14,6 +14,8 @@ import { EmployeesModule } from './employees/employees.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { StatsModule } from './stats/stats.module';
 import { ClientsModule } from './clients/clients.module';
+import { CashModule } from './cash/cash.module';
+import { StockModule } from './stock/stock.module';
 import { getThrottlerOptions } from './common/throttling/throttle-config';
 
 @Module({
@@ -30,6 +32,8 @@ import { getThrottlerOptions } from './common/throttling/throttle-config';
     ReviewsModule,
     StatsModule,
     ClientsModule,
+    CashModule,
+    StockModule,
   ],
   controllers: [AppController],
   providers: [

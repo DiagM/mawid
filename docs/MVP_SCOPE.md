@@ -111,6 +111,9 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Segments de clientèle (`?segment=lapsed\|regulars`) | ✅ Fait |
 | Changement d'offre et mise en avant (`npm run set-plan`) | ✅ Fait |
 | Mise en avant payante (`Salon.featuredUntil`) | ✅ Fait — expire toute seule |
+| Multi-villes (Alger, Oran, Constantine) | ✅ Fait |
+| Caisse (`GET`/`POST`/`DELETE /api/cash`) | ✅ Fait |
+| Stocks (`/api/products`, mouvements) | ✅ Fait |
 | Tests | 🟡 51 tests unitaires lancés en CI. Pas encore de suite d'intégration automatisée sur base réelle (l'isolation A/B a été vérifiée manuellement sur deux salons). |
 
 ### Frontend
@@ -319,7 +322,28 @@ La mise en avant est **annoncée explicitement** dans les résultats : un
 classement payant non signalé tromperait le client sur la raison de ce
 premier rang.
 
-**Lot 7 — V4.** Caisse, stocks, multi-villes, abstraction paiement.
+**Lot 7 — V4.** 🟡 Backend livré le 2026-09-20 : multi-villes, caisse,
+stocks. Reste l'interface et l'abstraction paiement.
+
+**Multi-villes** : liste fermée (`common/cities.ts`). Accepter une chaîne
+libre laisserait s'accumuler « alger », « Alger » et « Algers » comme trois
+villes distinctes. Une ville ne s'ouvre qu'au moment où elle a des salons,
+sinon le premier visiteur tombe sur une page vide.
+
+**Caisse** : un salon encaisse aussi des clients **sans rendez-vous en
+ligne**. Ne compter que les réservations Mawid donnerait au gérant un chiffre
+systématiquement faux, et il continuerait de tenir son vrai cahier à côté.
+Les rendez-vous honorés non encore encaissés sont proposés en un clic, pour
+éviter la double saisie. Montants toujours positifs, c'est le type qui porte
+le sens. Suppression réelle : un journal qui garde les lignes fausses n'en
+est plus un.
+
+**Stocks** : la quantité est dénormalisée sur le produit (lue en permanence)
+mais **jamais écrite seule** — toujours dans la même transaction que le
+mouvement qui la justifie. Elle n'est pas modifiable par `PATCH` : la changer
+en direct rendrait l'historique faux sans prévenir. Un mouvement rendant le
+stock négatif est refusé — un stock négatif n'existe pas physiquement, et
+l'accepter masquerait l'erreur de saisie.
 
 ## 6. Hors périmètre, quelle que soit la version
 

@@ -280,6 +280,7 @@ export class SalonsService {
       ...(dto.description !== undefined && { description: dto.description }),
       ...(dto.addressLine !== undefined && { addressLine: dto.addressLine }),
       ...(dto.district !== undefined && { district: dto.district }),
+      ...(dto.city !== undefined && { city: dto.city }),
       ...(dto.latitude !== undefined && { latitude: dto.latitude }),
       ...(dto.longitude !== undefined && { longitude: dto.longitude }),
       ...(dto.openingHours !== undefined && {

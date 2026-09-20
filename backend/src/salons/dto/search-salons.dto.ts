@@ -8,16 +8,13 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { CITIES } from '../../common/cities';
 
 /**
- * Villes ouvertes à la recherche.
- *
- * Liste fermée volontairement : la V1 ne couvre qu'Alger (business plan §7),
- * et accepter une chaîne libre laisserait indexer des pages de résultats vides
- * pour n'importe quelle ville — mauvais pour le référencement comme pour la
- * crédibilité. Oran et Constantine s'ajouteront ici en V4.
+ * Villes ouvertes à la recherche : la liste partagée du produit.
+ * Voir `common/cities.ts` pour la raison de sa fermeture.
  */
-export const SEARCHABLE_CITIES = ['Alger'] as const;
+export const SEARCHABLE_CITIES = CITIES;
 
 export class SearchSalonsDto {
   @IsOptional()

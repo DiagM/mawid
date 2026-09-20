@@ -1,11 +1,13 @@
 import {
   IsBoolean,
   IsEmpty,
+  IsIn,
   IsOptional,
   IsString,
   Length,
   Matches,
 } from 'class-validator';
+import { CITIES, type City } from '../../common/cities';
 
 /**
  * Inscription self-service d'un gérant (business plan §7.1).
@@ -56,6 +58,14 @@ export class RegisterDto {
   @IsString()
   @Length(2, 80)
   district!: string;
+
+  /**
+   * Ville du salon (V4 : multi-villes). Omise, on retombe sur Alger — le
+   * marché initial, et la ville de la quasi-totalité des salons inscrits.
+   */
+  @IsOptional()
+  @IsIn(CITIES)
+  city?: City;
 
   /** Numéro WhatsApp public, distinct du numéro de connexion du gérant. */
   @IsString()
