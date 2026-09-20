@@ -334,6 +334,173 @@ export async function setReservationStatusAction(
 }
 
 // ============================================
+// Caisse (V4)
+// ============================================
+
+/**
+ * Le gérant saisit des dinars, la base stocke des centimes entiers
+ * (CLAUDE.md §3.5). La conversion se fait ici, une seule fois.
+ */
+function toCents(input: FormDataEntryValue | null): number | null {
+  const dinars = Number(input);
+  if (!Number.isFinite(dinars) || dinars <= 0) {
+    return null;
+  }
+  return Math.round(dinars * 100);
+}
+
+export async function createCashMovementAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const token = await requireSessionToken();
+
+  const amountCents = toCents(formData.get('amountDinars'));
+  const label = String(formData.get('label') ?? '').trim();
+  const type = String(formData.get('type') ?? '');
+
+  if (amountCents === null || label.length < 2) {
+    return { error: fr.common.error };
+  }
+
+  if (type !== 'SALE' && type !== 'EXPENSE') {
+    return { error: fr.common.error };
+  }
+
+  const method = String(formData.get('method') ?? 'CASH');
+
+  try {
+    await pro.createCashMovement(token, {
+      type,
+      amountCents,
+      label,
+      method:
+        method === 'CARD' || method === 'TRANSFER' ? method : 'CASH',
+    });
+  } catch (error) {
+    return { error: toMessage(error, fr.common.error) };
+  }
+
+  revalidatePath('/pro/caisse');
+  return { success: fr.pro.saved };
+}
+
+/** Encaissement d'un rendez-vous déjà connu : aucun montant à ressaisir. */
+export async function cashReservationAction(
+  formData: FormData,
+): Promise<void> {
+  const token = await requireSessionToken();
+
+  const reservationId = String(formData.get('reservationId') ?? '');
+  const amountCents = Number(formData.get('amountCents'));
+  const label = String(formData.get('label') ?? '');
+  const employeeId = String(formData.get('employeeId') ?? '');
+
+  if (!reservationId || !Number.isInteger(amountCents) || amountCents <= 0) {
+    return;
+  }
+
+  await pro.createCashMovement(token, {
+    type: 'SALE',
+    amountCents,
+    label,
+    reservationId,
+    ...(employeeId && { employeeId }),
+  });
+
+  revalidatePath('/pro/caisse');
+}
+
+export async function deleteCashMovementAction(
+  formData: FormData,
+): Promise<void> {
+  const token = await requireSessionToken();
+  const id = String(formData.get('id') ?? '');
+
+  await pro.deleteCashMovement(token, id);
+  revalidatePath('/pro/caisse');
+}
+
+// ============================================
+// Stocks (V4)
+// ============================================
+
+export async function createProductAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const token = await requireSessionToken();
+
+  const name = String(formData.get('name') ?? '').trim();
+  if (name.length < 2) {
+    return { error: fr.common.error };
+  }
+
+  const quantity = Number(formData.get('quantity'));
+  const threshold = Number(formData.get('lowStockThreshold'));
+  const cost = toCents(formData.get('costDinars'));
+
+  try {
+    await pro.createProduct(token, {
+      name,
+      unit: String(formData.get('unit') ?? '').trim() || undefined,
+      ...(cost !== null && { costCents: cost }),
+      quantity: Number.isInteger(quantity) && quantity >= 0 ? quantity : 0,
+      lowStockThreshold:
+        Number.isInteger(threshold) && threshold >= 0 ? threshold : 0,
+    });
+  } catch (error) {
+    return { error: toMessage(error, fr.common.error) };
+  }
+
+  revalidatePath('/pro/stock');
+  return { success: fr.pro.saved };
+}
+
+/**
+ * Entrée ou sortie de stock.
+ *
+ * Passe par `useActionState` parce que le refus « stock négatif » est une
+ * réponse métier légitime que le gérant doit lire, pas une erreur à avaler.
+ */
+export async function moveStockAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const token = await requireSessionToken();
+
+  const productId = String(formData.get('productId') ?? '');
+  const quantity = Number(formData.get('quantity'));
+  const direction = String(formData.get('direction') ?? 'in');
+
+  if (!productId || !Number.isInteger(quantity) || quantity <= 0) {
+    return { error: fr.common.error };
+  }
+
+  try {
+    await pro.moveStock(token, productId, {
+      delta: direction === 'out' ? -quantity : quantity,
+      reason: String(formData.get('reason') ?? '').trim() || undefined,
+    });
+  } catch (error) {
+    return { error: toMessage(error, fr.common.error) };
+  }
+
+  revalidatePath('/pro/stock');
+  return { success: fr.pro.saved };
+}
+
+export async function archiveProductAction(
+  formData: FormData,
+): Promise<void> {
+  const token = await requireSessionToken();
+  const id = String(formData.get('id') ?? '');
+
+  await pro.archiveProduct(token, id);
+  revalidatePath('/pro/stock');
+}
+
+// ============================================
 // Indisponibilités
 // ============================================
 

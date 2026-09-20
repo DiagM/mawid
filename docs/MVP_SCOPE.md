@@ -114,6 +114,7 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Multi-villes (Alger, Oran, Constantine) | ✅ Fait |
 | Caisse (`GET`/`POST`/`DELETE /api/cash`) | ✅ Fait |
 | Stocks (`/api/products`, mouvements) | ✅ Fait |
+| Abstraction paiement (`PaymentProvider`) | ✅ Fait — seule implémentation : sur place |
 | Tests | 🟡 51 tests unitaires lancés en CI. Pas encore de suite d'intégration automatisée sur base réelle (l'isolation A/B a été vérifiée manuellement sur deux salons). |
 
 ### Frontend
@@ -141,6 +142,8 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Fiches clients `/pro/clients` et `/pro/clients/[id]` | ✅ Fait |
 | Bandeau de quota (alerte à 80 %, blocage à 100 %) | ✅ Fait |
 | Campagnes `/pro/campagnes` | ✅ Fait — liens `wa.me` personnalisés |
+| Caisse `/pro/caisse` | ✅ Fait — journal, encaissement en un clic |
+| Stock `/pro/stock` | ✅ Fait — entrées, sorties, alerte de seuil |
 
 ## 5. Ordre de construction
 
@@ -322,8 +325,16 @@ La mise en avant est **annoncée explicitement** dans les résultats : un
 classement payant non signalé tromperait le client sur la raison de ce
 premier rang.
 
-**Lot 7 — V4.** 🟡 Backend livré le 2026-09-20 : multi-villes, caisse,
-stocks. Reste l'interface et l'abstraction paiement.
+**Lot 7 — V4.** ✅ Livré le 2026-09-20. Multi-villes, caisse, stocks,
+interface et abstraction paiement.
+
+**Abstraction paiement** : `PaymentProvider` avec une seule implémentation,
+`OnSitePaymentProvider`, qui ne fait rien — et c'est le but. Elle n'existe
+pas pour faire fonctionner un paiement en ligne aujourd'hui, mais pour que
+brancher SATIM plus tard soit un **ajout** : une seconde implémentation et
+une variable d'environnement, sans qu'aucune route ni service métier ne
+bouge. L'interface est volontairement minimale — l'étoffer par anticipation
+la rendrait déjà spécifique à SATIM, ce qu'elle cherche justement à éviter.
 
 **Multi-villes** : liste fermée (`common/cities.ts`). Accepter une chaîne
 libre laisserait s'accumuler « alger », « Alger » et « Algers » comme trois

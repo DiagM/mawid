@@ -269,6 +269,144 @@ export function updateReservationStatus(
 }
 
 // ============================================
+// Caisse (V4)
+// ============================================
+
+export type CashType = 'SALE' | 'EXPENSE';
+export type PaymentMethod = 'CASH' | 'CARD' | 'TRANSFER';
+
+export interface CashMovement {
+  id: string;
+  type: CashType;
+  amountCents: number;
+  label: string;
+  method: PaymentMethod;
+  localTime: string;
+  employeeName: string | null;
+  clientFirstName: string | null;
+}
+
+export interface CashDay {
+  date: string;
+  salesCents: number;
+  expensesCents: number;
+  /** Peut être négatif : une journée de gros achats est une information. */
+  balanceCents: number;
+  items: CashMovement[];
+}
+
+export interface PendingReservation {
+  id: string;
+  localTime: string;
+  clientFirstName: string;
+  employeeId: string | null;
+  employeeName: string | null;
+  label: string;
+  amountCents: number;
+}
+
+export function getCashDay(token: string, date?: string): Promise<CashDay> {
+  const suffix = date ? `?date=${date}` : '';
+  return apiFetch<CashDay>(`/cash${suffix}`, { token });
+}
+
+export function getPendingReservations(
+  token: string,
+  date?: string,
+): Promise<PendingReservation[]> {
+  const suffix = date ? `?date=${date}` : '';
+  return apiFetch<PendingReservation[]>(`/cash/pending${suffix}`, { token });
+}
+
+export interface CashMovementInput {
+  type: CashType;
+  amountCents: number;
+  label: string;
+  method?: PaymentMethod;
+  reservationId?: string;
+  employeeId?: string;
+}
+
+export function createCashMovement(
+  token: string,
+  input: CashMovementInput,
+): Promise<{ id: string }> {
+  return apiFetch<{ id: string }>('/cash', {
+    method: 'POST',
+    token,
+    body: input,
+  });
+}
+
+export function deleteCashMovement(
+  token: string,
+  id: string,
+): Promise<void> {
+  return apiFetch<void>(`/cash/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+// ============================================
+// Stocks (V4)
+// ============================================
+
+export interface StockProduct {
+  id: string;
+  name: string;
+  unit: string | null;
+  costCents: number | null;
+  quantity: number;
+  lowStockThreshold: number;
+  isActive: boolean;
+  /** Règle métier calculée côté serveur, identique pour toutes les vues. */
+  isLowStock: boolean;
+}
+
+export function getProducts(token: string): Promise<StockProduct[]> {
+  return apiFetch<StockProduct[]>('/products', { token });
+}
+
+export function createProduct(
+  token: string,
+  input: {
+    name: string;
+    unit?: string;
+    costCents?: number;
+    quantity?: number;
+    lowStockThreshold?: number;
+  },
+): Promise<StockProduct> {
+  return apiFetch<StockProduct>('/products', {
+    method: 'POST',
+    token,
+    body: input,
+  });
+}
+
+export function moveStock(
+  token: string,
+  productId: string,
+  input: { delta: number; reason?: string },
+): Promise<{ id: string; name: string; quantity: number }> {
+  return apiFetch<{ id: string; name: string; quantity: number }>(
+    `/products/${encodeURIComponent(productId)}/movements`,
+    { method: 'POST', token, body: input },
+  );
+}
+
+export function archiveProduct(
+  token: string,
+  productId: string,
+): Promise<StockProduct> {
+  return apiFetch<StockProduct>(
+    `/products/${encodeURIComponent(productId)}`,
+    { method: 'PATCH', token, body: { isActive: false } },
+  );
+}
+
+// ============================================
 // Quota et offre (V3)
 // ============================================
 

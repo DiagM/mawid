@@ -79,6 +79,8 @@ export default async function ProLayout({
               <NavLink href="/pro/avis" label={fr.pro.nav.reviews} />
               <NavLink href="/pro/clients" label={fr.pro.nav.clients} />
               <NavLink href="/pro/campagnes" label={fr.pro.nav.campaigns} />
+              <NavLink href="/pro/caisse" label={fr.pro.nav.cash} />
+              <NavLink href="/pro/stock" label={fr.pro.nav.stock} />
               <NavLink href="/pro/statistiques" label={fr.pro.nav.stats} />
               <NavLink
                 href="/pro/indisponibilites"
