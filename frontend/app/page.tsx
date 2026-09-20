@@ -97,6 +97,16 @@ export default async function HomePage({ searchParams }: PageProps) {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
+                      {/*
+                        La mise en avant est annoncée explicitement : un
+                        classement payant non signalé tromperait le client sur
+                        la raison de ce premier rang.
+                      */}
+                      {salon.isFeatured && (
+                        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-accent">
+                          {fr.search.featured}
+                        </p>
+                      )}
                       <h2 className="font-medium">{salon.name}</h2>
                       <p className="mt-0.5 text-sm text-muted">
                         {salon.district}, {salon.city}

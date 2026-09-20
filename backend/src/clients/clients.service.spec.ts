@@ -86,9 +86,7 @@ describe('ClientsService', () => {
 
       const result = await service.findMine('user-a', undefined, 100, 'lapsed');
 
-      expect(result.items.map((client) => client.firstName)).toEqual([
-        'Perdu',
-      ]);
+      expect(result.items.map((client) => client.firstName)).toEqual(['Perdu']);
     });
 
     it('exclut ceux qui ont déjà un rendez-vous à venir', async () => {
@@ -103,7 +101,7 @@ describe('ClientsService', () => {
       expect(result.items).toHaveLength(0);
     });
 
-    it("exclut ceux qui ne sont jamais venus", async () => {
+    it('exclut ceux qui ne sont jamais venus', async () => {
       // Un client sans visite honorée n'est pas « perdu de vue ».
       prisma.reservation.findMany.mockResolvedValue([
         reservation('cli-3', 'Jamais', 'NO_SHOW', -100),
@@ -119,8 +117,20 @@ describe('ClientsService', () => {
         reservation('cli-4', 'Trente', 'HONORED', -30),
       ]);
 
-      const large = await service.findMine('user-a', undefined, 100, 'lapsed', 20);
-      const strict = await service.findMine('user-a', undefined, 100, 'lapsed', 60);
+      const large = await service.findMine(
+        'user-a',
+        undefined,
+        100,
+        'lapsed',
+        20,
+      );
+      const strict = await service.findMine(
+        'user-a',
+        undefined,
+        100,
+        'lapsed',
+        60,
+      );
 
       expect(large.items).toHaveLength(1);
       expect(strict.items).toHaveLength(0);
@@ -170,7 +180,7 @@ describe('ClientsService', () => {
       expect(calls[0][0].where.salonId).toBe('salon-a');
     });
 
-    it("refuse une fiche sans aucun rendez-vous dans ce salon", async () => {
+    it('refuse une fiche sans aucun rendez-vous dans ce salon', async () => {
       // C'est ce qui empêche un gérant de lire la fiche d'un client d'un
       // autre salon en devinant son identifiant.
       prisma.reservation.findMany.mockResolvedValue([]);

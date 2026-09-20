@@ -36,6 +36,7 @@ export const fr = {
     empty: 'Aucun salon ne correspond à votre recherche.',
     emptyHelp: 'Essayez un autre mot, ou retirez le filtre.',
     from: 'à partir de',
+    featured: 'Mis en avant',
   },
 
   salon: {

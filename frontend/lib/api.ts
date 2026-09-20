@@ -235,6 +235,8 @@ export interface SalonSearchItem {
   photo: string | null;
   fromPriceCents: number | null;
   rating: RatingSummary;
+  /** Mise en avant payante, en cours de validité (add-on §8.2). */
+  isFeatured: boolean;
 }
 
 export interface SalonSearchResult {

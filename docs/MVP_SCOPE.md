@@ -109,7 +109,8 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Quotas par offre (`GET /api/reservations/quota`) | ✅ Fait — Free 30 RDV/mois |
 | Fiches clients (`GET /api/clients`) | ✅ Fait — scopées par salon |
 | Segments de clientèle (`?segment=lapsed\|regulars`) | ✅ Fait |
-| Changement d'offre (`npm run set-plan`) | ✅ Fait |
+| Changement d'offre et mise en avant (`npm run set-plan`) | ✅ Fait |
+| Mise en avant payante (`Salon.featuredUntil`) | ✅ Fait — expire toute seule |
 | Tests | 🟡 51 tests unitaires lancés en CI. Pas encore de suite d'intégration automatisée sur base réelle (l'isolation A/B a été vérifiée manuellement sur deux salons). |
 
 ### Frontend
@@ -302,7 +303,21 @@ pas perdre sa place dans une liste de trente noms pendant une session, pas à
 constituer un historique. C'est dit explicitement à l'écran plutôt que
 laissé découvrir après un rechargement.
 
-Reste : mise en avant.
+Mise en avant livrée le 2026-09-20, ce qui **clôt le lot 6**. Stockée en
+`featuredUntil` (une date) plutôt qu'en booléen : un add-on se vend à la
+semaine, et une date qui expire toute seule évite d'avoir à penser à la
+retirer.
+
+⚠️ **Piège évité** : un simple `orderBy: { featuredUntil: 'desc' }` aurait
+été faux — une date expirée reste une date non nulle, donc un salon ayant
+cessé de payer aurait continué de passer devant les autres. Le tri sépare
+explicitement les deux populations sur la date du jour, en deux requêtes,
+pour que la pagination reste exacte. Deux tests verrouillent ce
+comportement.
+
+La mise en avant est **annoncée explicitement** dans les résultats : un
+classement payant non signalé tromperait le client sur la raison de ce
+premier rang.
 
 **Lot 7 — V4.** Caisse, stocks, multi-villes, abstraction paiement.
 

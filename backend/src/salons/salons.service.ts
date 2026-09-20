@@ -41,31 +41,75 @@ export class SalonsService {
       ...(matchedIds !== null && { id: { in: matchedIds } }),
     };
 
-    const [salons, total] = await Promise.all([
+    const now = new Date();
+
+    /**
+     * Mise en avant payante (add-on §8.2).
+     *
+     * ⚠️ Un simple `orderBy: { featuredUntil: 'desc', nulls: 'last' }` serait
+     * FAUX : une date expirée reste une date non nulle, donc un salon qui a
+     * cessé de payer continuerait de passer devant les autres. On sépare donc
+     * explicitement les deux populations sur la date du jour.
+     */
+    const featuredWhere: Prisma.SalonWhereInput = {
+      ...where,
+      featuredUntil: { gt: now },
+    };
+    const regularWhere: Prisma.SalonWhereInput = {
+      ...where,
+      OR: [{ featuredUntil: null }, { featuredUntil: { lte: now } }],
+      // `where` peut déjà porter un OR (recherche textuelle) : on les combine
+      // avec AND plutôt que d'écraser silencieusement le premier.
+      ...(where.OR && { AND: [{ OR: where.OR }], OR: undefined }),
+    };
+
+    const selectFields = {
+      // Interne : sert au regroupement des notes, retiré de la réponse.
+      id: true,
+      slug: true,
+      name: true,
+      district: true,
+      city: true,
+      isWomenOnly: true,
+      photos: true,
+      featuredUntil: true,
+      prestations: {
+        where: { isActive: true },
+        orderBy: { priceCents: 'asc' as const },
+        take: 1,
+        select: { priceCents: true },
+      },
+    };
+
+    // Deux requêtes plutôt qu'un tri en mémoire : la pagination doit rester
+    // exacte, un salon mis en avant en page 2 devrait remonter en page 1.
+    const [featured, featuredCount, total] = await Promise.all([
       this.prisma.salon.findMany({
-        where,
+        where: featuredWhere,
         orderBy: [{ name: 'asc' }],
         take: limit,
         skip: offset,
-        select: {
-          // Interne : sert au regroupement des notes, retiré de la réponse.
-          id: true,
-          slug: true,
-          name: true,
-          district: true,
-          city: true,
-          isWomenOnly: true,
-          photos: true,
-          prestations: {
-            where: { isActive: true },
-            orderBy: { priceCents: 'asc' },
-            take: 1,
-            select: { priceCents: true },
-          },
-        },
+        select: selectFields,
       }),
+      this.prisma.salon.count({ where: featuredWhere }),
       this.prisma.salon.count({ where }),
     ]);
+
+    // On ne complète avec des salons ordinaires que si la page n'est pas
+    // déjà remplie par les mis en avant.
+    const remainingSlots = limit - featured.length;
+    const regular =
+      remainingSlots > 0
+        ? await this.prisma.salon.findMany({
+            where: regularWhere,
+            orderBy: [{ name: 'asc' }],
+            take: remainingSlots,
+            skip: Math.max(0, offset - featuredCount),
+            select: selectFields,
+          })
+        : [];
+
+    const salons = [...featured, ...regular];
 
     // Un agrégat par salon produirait N+1 requêtes sur une page de résultats.
     const ratings = await this.reviews.summariesForSalons(
@@ -87,6 +131,9 @@ export class SalonsService {
         // évite d'afficher un catalogue complet dans une liste de résultats.
         fromPriceCents: salon.prestations[0]?.priceCents ?? null,
         rating: ratings.get(salon.id) ?? { average: null, count: 0 },
+        // Une mise en avant expirée n'est plus signalée, même si la date
+        // reste en base : c'est la date qui fait foi, pas sa présence.
+        isFeatured: salon.featuredUntil !== null && salon.featuredUntil > now,
       })),
     };
   }

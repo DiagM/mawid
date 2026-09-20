@@ -95,6 +95,12 @@ model Salon {
   // encaissement automatique : il est positionné à la main après paiement.
   plan SalonPlan @default(FREE)
 
+  // Mise en avant payante dans les résultats de recherche (add-on §8.2).
+  // Positionnée à la main, comme le plan — aucun encaissement automatique.
+  // `featuredUntil` plutôt qu'un booléen : un add-on se vend à la semaine,
+  // et une date qui expire toute seule évite d'avoir à penser à la retirer.
+  featuredUntil DateTime?
+
   // Métadonnées
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

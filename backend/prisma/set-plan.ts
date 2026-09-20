@@ -13,6 +13,10 @@
  *
  *   # Passer un salon au plan Pro
  *   docker exec -it mawid-backend npm run set-plan -- --slug karim-barber --plan PRO
+ *
+ *   # Mise en avant payante, vendue a la semaine (add-on §8.2)
+ *   docker exec -it mawid-backend npm run set-plan -- --slug karim-barber --featured 2
+ *   docker exec -it mawid-backend npm run set-plan -- --slug karim-barber --featured 0
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -78,6 +82,7 @@ async function list() {
       name: true,
       plan: true,
       isActive: true,
+      featuredUntil: true,
       _count: {
         select: {
           reservations: {
@@ -107,6 +112,12 @@ async function list() {
     console.log(`      ${salon.name}`);
     console.log(`      Offre : ${salon.plan} · ${used} RDV${quota}`);
 
+    if (salon.featuredUntil && salon.featuredUntil > new Date()) {
+      console.log(
+        `      ⭐ Mis en avant jusqu'au ${salon.featuredUntil.toISOString().slice(0, 10)}`,
+      );
+    }
+
     if (salon.plan === 'FREE' && used >= 24) {
       console.log(
         `      ⚠️  Proche de la limite : les clients suivants seront refusés.`,
@@ -126,9 +137,20 @@ async function main() {
 
   const slug = typeof args.slug === 'string' ? args.slug : null;
   const plan = typeof args.plan === 'string' ? args.plan.toUpperCase() : null;
+  const featuredWeeks =
+    typeof args.featured === 'string' ? Number(args.featured) : null;
 
-  if (!slug || !plan) {
-    throw new Error('Options --slug et --plan requises (ou --list)');
+  if (!slug) {
+    throw new Error('Option --slug requise (ou --list)');
+  }
+
+  if (featuredWeeks !== null) {
+    await setFeatured(slug, featuredWeeks);
+    return;
+  }
+
+  if (!plan) {
+    throw new Error('Option --plan ou --featured requise');
   }
 
   if (!PLANS.includes(plan as Plan)) {
@@ -159,6 +181,45 @@ async function main() {
     plan === 'FREE'
       ? '   Limité à 30 réservations en ligne par mois.\n'
       : '   Réservations en ligne illimitées.\n',
+  );
+}
+
+/**
+ * Mise en avant a la semaine. `--featured 0` la retire immediatement, sans
+ * attendre l'expiration.
+ */
+async function setFeatured(slug: string, weeks: number) {
+  if (!Number.isInteger(weeks) || weeks < 0 || weeks > 52) {
+    throw new Error('--featured attend un nombre entier de semaines (0 a 52)');
+  }
+
+  const salon = await prisma.salon.findUnique({
+    where: { slug },
+    select: { id: true, name: true },
+  });
+
+  if (!salon) {
+    throw new Error(`Aucun salon avec le slug "${slug}"`);
+  }
+
+  const featuredUntil =
+    weeks === 0
+      ? null
+      : new Date(Date.now() + weeks * 7 * 24 * 60 * 60 * 1000);
+
+  await prisma.salon.update({
+    where: { id: salon.id },
+    data: { featuredUntil },
+  });
+
+  console.log(
+    featuredUntil === null
+      ? `
+✅ ${salon.name} n'est plus mis en avant.
+`
+      : `
+⭐ ${salon.name} est mis en avant jusqu'au ${featuredUntil.toISOString().slice(0, 10)}.
+`,
   );
 }
 

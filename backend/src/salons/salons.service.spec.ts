@@ -181,6 +181,78 @@ describe('SalonsService', () => {
     });
   });
 
+  describe('mise en avant payante', () => {
+    it('sépare les mis en avant sur la date du jour, pas sur la présence d’une date', async () => {
+      // Un simple orderBy featuredUntil desc serait FAUX : une date expirée
+      // reste une date non nulle, donc un salon qui a cessé de payer
+      // continuerait de passer devant les autres.
+      await service.search({});
+
+      const calls = prisma.salon.findMany.mock.calls as {
+        where: { featuredUntil?: unknown; OR?: unknown[] };
+      }[][];
+
+      const featuredCall = calls.find((call) => call[0].where.featuredUntil);
+      expect(featuredCall?.[0].where.featuredUntil).toHaveProperty('gt');
+    });
+
+    it('exclut les mises en avant expirées de la population prioritaire', async () => {
+      await service.search({});
+
+      const calls = prisma.salon.findMany.mock.calls as {
+        where: { OR?: { featuredUntil?: unknown }[] };
+      }[][];
+
+      // La seconde requête regroupe « jamais mis en avant » et « expiré ».
+      const regularCall = calls.find((call) =>
+        call[0].where.OR?.some((clause) => clause.featuredUntil === null),
+      );
+      expect(regularCall).toBeDefined();
+    });
+
+    it('ne signale pas une mise en avant expirée', async () => {
+      prisma.salon.findMany.mockResolvedValue([
+        {
+          id: 'salon-a',
+          slug: 'karim-barber',
+          name: 'Karim Barber',
+          district: 'Bab Ezzouar',
+          city: 'Alger',
+          isWomenOnly: false,
+          photos: [],
+          featuredUntil: new Date('2020-01-01T00:00:00.000Z'),
+          prestations: [],
+        },
+      ]);
+      prisma.salon.count.mockResolvedValue(1);
+
+      const result = await service.search({});
+
+      expect(result.items[0].isFeatured).toBe(false);
+    });
+
+    it('signale une mise en avant en cours', async () => {
+      prisma.salon.findMany.mockResolvedValue([
+        {
+          id: 'salon-a',
+          slug: 'karim-barber',
+          name: 'Karim Barber',
+          district: 'Bab Ezzouar',
+          city: 'Alger',
+          isWomenOnly: false,
+          photos: [],
+          featuredUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          prestations: [],
+        },
+      ]);
+      prisma.salon.count.mockResolvedValue(1);
+
+      const result = await service.search({});
+
+      expect(result.items[0].isFeatured).toBe(true);
+    });
+  });
+
   describe('fiche publique', () => {
     it('expose le numéro public et le filtre féminin', async () => {
       prisma.salon.findUnique.mockResolvedValue({
