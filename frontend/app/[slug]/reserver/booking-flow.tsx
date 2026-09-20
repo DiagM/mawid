@@ -11,6 +11,7 @@ import {
   type ReservationView,
 } from '@/lib/api';
 import { fr } from '@/lib/i18n/fr';
+import { WaitlistForm } from './waitlist-form';
 import {
   addDays,
   daysBetween,
@@ -340,6 +341,17 @@ export function BookingFlow({
               <p className="mt-1 text-sm text-muted">
                 {fr.booking.tryAnotherDay}
               </p>
+
+              {/* Proposé uniquement en cas d'échec du chargement : sinon on
+                  inviterait à s'inscrire sur une liste d'attente alors que
+                  la journée n'est peut-être pas complète. */}
+              {!slotsError && (
+                <WaitlistForm
+                  slug={salon.slug}
+                  date={date}
+                  prestationIds={selectedIds}
+                />
+              )}
             </div>
           ) : (
             <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">

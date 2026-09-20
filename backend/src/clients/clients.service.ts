@@ -259,11 +259,19 @@ export class ClientsService {
     const salon = await this.getOwnedSalon(userId);
     assertCapability(salon.plan, 'clients');
 
-    const seenHere = await this.prisma.reservation.count({
-      where: { salonId: salon.id, clientId },
-    });
+    // Réservation OU liste d'attente : une cliente qui inonde la liste
+    // d'attente sans jamais réserver doit pouvoir être bloquée, alors
+    // qu'elle n'apparaît dans aucun historique de rendez-vous.
+    const [reservations, waiting] = await Promise.all([
+      this.prisma.reservation.count({
+        where: { salonId: salon.id, clientId },
+      }),
+      this.prisma.waitlistEntry.count({
+        where: { salonId: salon.id, clientId },
+      }),
+    ]);
 
-    if (seenHere === 0) {
+    if (reservations === 0 && waiting === 0) {
       throw new NotFoundException('Client introuvable dans votre salon');
     }
 

@@ -176,6 +176,22 @@ export const fr = {
     signingIn: 'Connexion…',
     signOut: 'Déconnexion',
 
+    waitlist: {
+      title: '{count} cliente(s) en attente ce jour-là',
+      help: '{pending} à rappeler. Première arrivée, première rappelée.',
+      allDone: 'Toutes ont été contactées.',
+      duration: '{minutes} min',
+      contact: 'Écrire sur WhatsApp',
+      contacted: 'Contactée',
+      markContacted: 'Marquer contactée',
+      markPending: 'Marquer à rappeler',
+      remove: 'Retirer',
+      message:
+        'Bonjour {firstName}, une place vient de se libérer chez {salon}. Souhaitez-vous la prendre ?',
+      noAutoMessage:
+        'Mawid n’envoie aucun message automatique. Vous écrivez depuis votre WhatsApp, donc depuis votre numéro.',
+    },
+
     locked: {
       badge: 'Inclus dans l’offre {plan}',
       contact:
@@ -815,6 +831,18 @@ export const fr = {
     finalTitle: 'Prêt à remplir votre agenda ?',
     finalBody:
       'Créez votre salon en trois minutes. Vous n’avez rien à payer tant que vous ne dépassez pas 30 rendez-vous par mois.',
+  },
+  waitlist: {
+    cta: 'Prévenez-moi si une place se libère',
+    title: 'Liste d’attente',
+    help:
+      'Laissez votre numéro : si une place se libère, le salon vous appelle. Vous ne recevrez aucun message automatique.',
+    note: 'Précision (optionnel)',
+    notePlaceholder: 'Plutôt le matin',
+    submit: 'M’inscrire sur la liste',
+    done: 'Vous êtes sur la liste.',
+    doneHelp:
+      'Le salon vous contactera si une place se libère le {date}. Vous pouvez aussi essayer un autre jour.',
   },
 } as const;
 

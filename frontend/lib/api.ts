@@ -359,3 +359,29 @@ export function rescheduleReservationByToken(
     { method: 'PATCH', body: { startsAt } },
   );
 }
+
+export interface JoinWaitlistInput {
+  desiredDate: string;
+  prestationIds: string[];
+  clientFirstName: string;
+  clientPhone: string;
+  note?: string;
+  /** Piège à robots : doit rester vide (docs/SECURITY.md §1.1). */
+  website?: string;
+}
+
+/**
+ * Inscription sur la liste d'attente d'une journée complète.
+ *
+ * Le serveur refuse si des créneaux restent libres : la liste d'attente
+ * n'est pas un second canal de réservation.
+ */
+export function joinWaitlist(
+  slug: string,
+  input: JoinWaitlistInput,
+): Promise<{ id: string; desiredDate: string }> {
+  return apiFetch(`/salons/${encodeURIComponent(slug)}/waitlist`, {
+    method: 'POST',
+    body: input,
+  });
+}

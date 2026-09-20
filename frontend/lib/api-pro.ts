@@ -617,3 +617,52 @@ export function setClientBlocked(
     body: { isBlocked, ...(reason && { reason }) },
   });
 }
+
+// ============================================
+// Liste d'attente
+// ============================================
+
+export interface WaitlistEntry {
+  id: string;
+  desiredDate: string;
+  clientFirstName: string;
+  clientPhone: string;
+  prestationsSummary: string;
+  durationMinutes: number;
+  note: string | null;
+  /** Renseigné quand le gérant a déjà rappelé cette personne. */
+  notifiedAt: string | null;
+  createdAt: string;
+}
+
+export function getWaitlist(
+  token: string,
+  from?: string,
+  to?: string,
+): Promise<WaitlistEntry[]> {
+  const query = new URLSearchParams();
+  if (from) query.set('from', from);
+  if (to) query.set('to', to);
+  const suffix = query.toString() ? `?${query.toString()}` : '';
+
+  return apiFetch<WaitlistEntry[]>(`/waitlist${suffix}`, { token });
+}
+
+export function setWaitlistNotified(
+  token: string,
+  id: string,
+  notified: boolean,
+): Promise<unknown> {
+  return apiFetch(`/waitlist/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    token,
+    body: { notified },
+  });
+}
+
+export function removeWaitlistEntry(token: string, id: string): Promise<void> {
+  return apiFetch<void>(`/waitlist/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    token,
+  });
+}

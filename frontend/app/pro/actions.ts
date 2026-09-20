@@ -742,3 +742,34 @@ export async function setClientBlockedAction(
     success: isBlocked ? fr.pro.clients.blockDone : fr.pro.clients.unblockDone,
   };
 }
+
+// ============================================
+// Liste d'attente
+// ============================================
+
+/**
+ * Marque une demande comme traitée, ou revient en arrière.
+ *
+ * On ne supprime pas : sans trace du rappel déjà fait, le gérant
+ * contacterait deux fois la même personne.
+ */
+export async function setWaitlistNotifiedAction(
+  formData: FormData,
+): Promise<void> {
+  const token = await requireSessionToken();
+  const id = String(formData.get('id') ?? '');
+  const notified = String(formData.get('notified') ?? '') === 'true';
+
+  await pro.setWaitlistNotified(token, id, notified);
+  revalidatePath('/pro');
+}
+
+export async function removeWaitlistEntryAction(
+  formData: FormData,
+): Promise<void> {
+  const token = await requireSessionToken();
+  const id = String(formData.get('id') ?? '');
+
+  await pro.removeWaitlistEntry(token, id);
+  revalidatePath('/pro');
+}

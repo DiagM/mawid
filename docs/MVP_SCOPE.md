@@ -512,6 +512,36 @@ avant d'appeler l'API, et exposer la carte par une route ajouterait un
 aller-retour par écran pour une valeur qui change une fois par an. Le
 backend refait le contrôle et fait foi.
 
+**Lot 13 — Blocage, report et liste d'attente.** ✅ Livré le 2026-09-21.
+
+**Blocage d'une cliente.** `Client.isBlocked` existait, était vérifié à la
+réservation, s'affichait en badge — et aucune route ne l'activait. Le champ
+est porté par la fiche cliente, **partagée entre tous les salons** :
+l'exposer au gérant aurait laissé un salon exclure quelqu'un de toute la
+plateforme. D'où `SalonBlockedClient`, local, à côté du bannissement
+plateforme qui reste une décision de Mawid. Les deux refusent du même
+message neutre.
+
+**Report.** La réservation est **mise à jour**, jamais annulée puis
+recréée : le `cancellationToken` survit donc le lien WhatsApp déjà envoyé
+reste valable, les snapshots de prix ne sont pas rejoués, et le quota — qui
+compte les créations — n'est pas consommé deux fois. Piège traité : un
+rendez-vous qu'on déplace figure parmi les intervalles occupés et **se
+bloquait lui-même** ; `loadBusyIntervals` accepte désormais une exclusion,
+déduite du token et jamais acceptée depuis l'URL.
+
+**Liste d'attente.** On ne s'inscrit **que si la journée est réellement
+complète** pour la demande : sans ce contrôle, la liste deviendrait un
+second canal de réservation et le gérant rappellerait des clientes qui
+auraient pu réserver seules. Aucune notification automatique — elle se
+facturerait au message. Le gérant voit les demandes dans son agenda, par
+ordre d'arrivée, avec un lien `wa.me` préparé, et marque celles qu'il a
+traitées : sans cette trace, il rappellerait deux fois la même personne.
+
+Le blocage est vérifié **avant** la disponibilité : sinon une personne
+bloquée apprendrait, par la différence de message, si la journée est
+complète.
+
 ## 6. Hors périmètre, quelle que soit la version
 
 - Application mobile native — le business plan lui-même tranche : « PWA

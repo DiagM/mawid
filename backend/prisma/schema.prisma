@@ -114,6 +114,7 @@ model Salon {
   reservations    Reservation[]
   reviews         Review[]
   blockedClients  SalonBlockedClient[]
+  waitlist        WaitlistEntry[]
   cashMovements CashMovement[]
   products      Product[]
 
@@ -255,6 +256,7 @@ model Client {
   reservations Reservation[]
   reviews      Review[]
   blockedBy    SalonBlockedClient[]
+  waitlist     WaitlistEntry[]
 
   @@index([phone])
   @@map("clients")
@@ -524,4 +526,56 @@ model SalonBlockedClient {
   @@unique([salonId, clientId])
   @@index([clientId])
   @@map("salon_blocked_clients")
+}
+
+// ============================================
+// WaitlistEntry — Liste d'attente sur une journée
+// ============================================
+// Quand un jour est complet, la cliente repartait sans laisser de trace.
+// C'est du chiffre d'affaires perdu pour le salon et un client perdu pour
+// la plateforme.
+//
+// Aucune notification automatique : envoyer un SMS ou un WhatsApp se facture
+// au message (docs/MVP_SCOPE.md §2.1). C'est le gérant qui contacte, depuis
+// son agenda, avec un lien wa.me préparé — donc gratuitement et depuis son
+// propre numéro, ce qui donne au message une chance d'être lu.
+model WaitlistEntry {
+  id       String @id @default(cuid())
+  salonId  String
+  clientId String
+
+  // Jour souhaité, en date LOCALE `YYYY-MM-DD` : une cliente raisonne en
+  // journée, pas en instant UTC. Pas de créneau précis — s'il y en avait un
+  // de libre, elle aurait réservé.
+  desiredDate String
+
+  // Snapshots, même logique que Reservation : corriger une fiche cliente ne
+  // doit pas réécrire une demande passée.
+  clientFirstName String
+  clientPhone     String
+
+  // Ce qu'elle veut, tel qu'affiché au gérant. La durée sert à juger si un
+  // créneau qui se libère peut réellement l'accueillir.
+  prestationsSummary String
+  durationMinutes    Int
+
+  /// Précision libre de la cliente : « plutôt le matin », « après 17h ».
+  note String?
+
+  /// Renseigné quand le gérant l'a contactée. On garde la ligne plutôt que
+  /// de la supprimer : sans trace, il rappellerait deux fois la même
+  /// personne.
+  notifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  salon  Salon  @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  // Une cliente ne s'inscrit qu'une fois par journée et par salon : sans
+  // cette unicité, rafraîchir la page créerait des doublons que le gérant
+  // devrait démêler.
+  @@unique([salonId, clientId, desiredDate])
+  @@index([salonId, desiredDate])
+  @@map("waitlist_entries")
 }

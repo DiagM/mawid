@@ -1,7 +1,14 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ApiError } from '@/lib/api';
-import { getAgenda, getMe, type AgendaReservation } from '@/lib/api-pro';
+import {
+  getAgenda,
+  getMe,
+  getMySalon,
+  getWaitlist,
+  type AgendaReservation,
+  type WaitlistEntry,
+} from '@/lib/api-pro';
 import { fr } from '@/lib/i18n/fr';
 import {
   addDays,
@@ -12,6 +19,7 @@ import {
 } from '@/lib/format';
 import { requireSessionToken } from '@/lib/session';
 import { setReservationStatusAction } from './actions';
+import { WaitlistPanel } from './waitlist-panel';
 
 type PageProps = { searchParams: Promise<{ date?: string }> };
 
@@ -53,12 +61,29 @@ export default async function AgendaPage({ searchParams }: PageProps) {
     throw error;
   }
 
+  // Liste d'attente du jour affiché. Un échec ne doit pas emporter l'agenda,
+  // qui est l'écran de travail : on dégrade en n'affichant rien.
+  let waiting: WaitlistEntry[] = [];
+  let salonName = '';
+  try {
+    const [entries, salon] = await Promise.all([
+      getWaitlist(token, day, day),
+      getMySalon(token),
+    ]);
+    waiting = entries;
+    salonName = salon.name;
+  } catch {
+    waiting = [];
+  }
+
   const honoredRevenue = reservations
     .filter((reservation) => reservation.status === 'HONORED')
     .reduce((total, reservation) => total + reservation.totalPriceCents, 0);
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6">
+      <WaitlistPanel entries={waiting} salonName={salonName} />
+
       <div className="mb-5 flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold capitalize">
           {formatLongDate(day)}
