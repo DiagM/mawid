@@ -30,7 +30,7 @@ function firstArg<T>(mock: jest.Mock): T {
 describe('ReservationsService', () => {
   let service: ReservationsService;
   let prisma: {
-    salon: { findFirst: jest.Mock };
+    salon: { findFirst: jest.Mock; findUnique: jest.Mock };
     reservation: {
       findMany: jest.Mock;
       findUnique: jest.Mock;
@@ -49,7 +49,12 @@ describe('ReservationsService', () => {
   beforeEach(async () => {
     prisma = {
       // Le gérant A ne possède que le salon A.
-      salon: { findFirst: jest.fn().mockResolvedValue({ id: SALON_A }) },
+      salon: {
+        findFirst: jest.fn().mockResolvedValue({ id: SALON_A }),
+        // Offre du salon, lue pour le quota mensuel. PRO par défaut :
+        // l'écrasante majorité de ces tests ne portent pas sur le quota.
+        findUnique: jest.fn().mockResolvedValue({ plan: 'PRO' }),
+      },
       reservation: {
         findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn(),
@@ -250,6 +255,71 @@ describe('ReservationsService', () => {
       expect(quota.where.clientId).toBe('cli-1');
       expect(quota.where.salonId).toBe(SALON_A);
       expect(quota.where.status).toBe('CONFIRMED');
+    });
+
+    it('refuse une réservation quand le salon a atteint son quota', async () => {
+      // Seule règle du produit qui refuse un client pour une raison qui ne le
+      // concerne pas : c'est le mécanisme de conversion vers l'offre Pro.
+      prisma.salon.findUnique.mockResolvedValue({ plan: 'FREE' });
+      prisma.reservation.count
+        .mockResolvedValueOnce(0) // RDV à venir du numéro
+        .mockResolvedValueOnce(0) // réservations du numéro sur 24 h
+        .mockResolvedValueOnce(30); // quota mensuel du salon, atteint
+
+      await expect(
+        service.createForSalon('salon-a', dto),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('laisse passer un salon en offre illimitée', async () => {
+      prisma.salon.findUnique.mockResolvedValue({ plan: 'PRO' });
+      prisma.reservation.count
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(5000);
+      prisma.$transaction.mockResolvedValue({
+        id: 'res-1',
+        startsAt: new Date('2026-10-05T08:00:00.000Z'),
+        endsAt: new Date('2026-10-05T08:30:00.000Z'),
+        status: 'CONFIRMED',
+        cancellationToken: 'tok-1',
+        clientFirstName: 'Amine',
+        reservationPrestations: [],
+      });
+
+      await expect(
+        service.createForSalon('salon-a', dto),
+      ).resolves.toBeDefined();
+    });
+
+    it("n'impute pas les annulations au quota du salon", async () => {
+      // Un client qui réserve puis se décommande ne doit pas amputer le
+      // quota : le salon n'a rien consommé.
+      prisma.salon.findUnique.mockResolvedValue({ plan: 'FREE' });
+      prisma.$transaction.mockResolvedValue({
+        id: 'res-1',
+        startsAt: new Date('2026-10-05T08:00:00.000Z'),
+        endsAt: new Date('2026-10-05T08:30:00.000Z'),
+        status: 'CONFIRMED',
+        cancellationToken: 'tok-1',
+        clientFirstName: 'Amine',
+        reservationPrestations: [],
+      });
+
+      await service.createForSalon('salon-a', dto);
+
+      const calls = prisma.reservation.count.mock.calls as {
+        where: { salonId?: string; status?: unknown; createdAt?: unknown };
+      }[][];
+      // Le plafond « 24 h par numéro » filtre lui aussi sur createdAt : c'est
+      // la présence de salonId qui identifie l'appel du quota du salon.
+      const quotaCall = calls.find(
+        (call) => call[0].where.salonId && call[0].where.createdAt,
+      );
+
+      expect(quotaCall).toBeDefined();
+      expect(quotaCall?.[0].where.status).toEqual({ not: 'CANCELED' });
     });
 
     it('refuse un client bloqué sans lui dire pourquoi', async () => {

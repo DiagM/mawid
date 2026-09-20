@@ -106,6 +106,9 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Multi-employés (`/api/employees`, moteur par ressource) | ✅ Fait |
 | Avis clients (`POST /api/reservations/token/:token/review`) | ✅ Fait — verrou token + HONORED |
 | Statistiques (`GET /api/stats/me`) | ✅ Fait — avec période comparative |
+| Quotas par offre (`GET /api/reservations/quota`) | ✅ Fait — Free 30 RDV/mois |
+| Fiches clients (`GET /api/clients`) | ✅ Fait — scopées par salon |
+| Changement d'offre (`npm run set-plan`) | ✅ Fait |
 | Tests | 🟡 51 tests unitaires lancés en CI. Pas encore de suite d'intégration automatisée sur base réelle (l'isolation A/B a été vérifiée manuellement sur deux salons). |
 
 ### Frontend
@@ -255,8 +258,27 @@ Deux choix de calcul qui changent la lecture :
 
 Reste : parrainage.
 
-**Lot 6 — V3.** Plans et quotas (Free 30 RDV/mois, Pro, Pro+), fiches
-clients, campagnes `wa.me` manuelles, mise en avant.
+**Lot 6 — V3.** 🟡 En cours. Quotas et fiches clients livrés le 2026-09-20.
+
+⚠️ **Décision produit lourde à connaître** : atteindre le quota Free fait
+**refuser des clients réels**, qui n'y sont pour rien. C'est le mécanisme de
+conversion voulu par le business plan §8.1 — un salon qui perd des
+réservations a une raison concrète de passer au plan Pro — mais c'est la
+seule fonctionnalité qui dégrade volontairement l'expérience du client final.
+Deux garde-fous : le gérant est alerté dès 80 % du quota, et le message
+renvoyé au client ne lui reproche rien et le renvoie vers le salon, qui peut
+toujours le prendre par téléphone.
+
+Les annulations ne sont pas imputées au quota : un client qui se décommande
+n'a rien fait consommer au salon. Le décompte porte sur `createdAt` et non
+`startsAt` — c'est l'acte de réserver qui est facturé, pas la date du RDV.
+
+Les fiches clients n'exposent que ce que **ce** salon a vécu avec le client,
+jamais ses rendez-vous ailleurs, alors même que l'entité `Client` est
+partagée entre salons.
+
+Reste : interface du back-office (quota, clients), campagnes `wa.me`
+manuelles, mise en avant.
 
 **Lot 7 — V4.** Caisse, stocks, multi-villes, abstraction paiement.
 

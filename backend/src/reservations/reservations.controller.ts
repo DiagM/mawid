@@ -41,6 +41,17 @@ export class ReservationsController {
   }
 
   /**
+   * GET /api/reservations/quota
+   * Consommation du quota mensuel du salon du gérant connecté.
+   * Déclarée avant /:id/status : aucun conflit, les préfixes diffèrent.
+   */
+  @Get('quota')
+  @UseGuards(JwtAuthGuard)
+  quota(@CurrentUser() user: AuthenticatedUser) {
+    return this.reservationsService.quotaForManager(user.id);
+  }
+
+  /**
    * PATCH /api/reservations/:id/status
    * Qualifie un RDV (honoré, non présenté, annulé par le salon).
    */

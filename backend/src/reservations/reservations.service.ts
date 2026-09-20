@@ -16,6 +16,8 @@ import {
   utcToLocalDate,
   utcToLocalTime,
 } from '../common/time/algiers-time';
+import { currentLocalMonthRange } from '../common/month-range';
+import { buildQuotaStatus, type QuotaStatus } from '../common/plans';
 
 /** Code Postgres d'une violation de contrainte d'exclusion. */
 const PG_EXCLUSION_VIOLATION = '23P01';
@@ -107,6 +109,7 @@ export class ReservationsService {
     }
 
     await this.assertPhoneQuotas(client.id, context.salonId);
+    await this.assertSalonQuota(context.salonId);
 
     try {
       const reservation = await this.prisma.$transaction(async (tx) => {
@@ -314,6 +317,63 @@ export class ReservationsService {
    * Retrouve ou crée la fiche client rattachée à un numéro.
    * Le téléphone est la clé naturelle : un numéro = une personne.
    */
+  /**
+   * Quota mensuel du salon selon son offre (business plan §8.1).
+   *
+   * ⚠️ C'est la seule règle du produit qui refuse un client pour une raison
+   * qui ne le concerne pas. Le message ne lui reproche donc rien et le
+   * renvoie vers le salon, qui peut toujours le prendre par téléphone — la
+   * réservation en ligne est bloquée, pas le rendez-vous lui-même.
+   */
+  private async assertSalonQuota(salonId: string) {
+    const quota = await this.quotaForSalon(salonId);
+
+    if (quota.isExceeded) {
+      throw new ForbiddenException(
+        'Ce salon a atteint sa limite de réservations en ligne pour ce mois-ci. ' +
+          'Contactez-le directement par téléphone.',
+      );
+    }
+  }
+
+  /**
+   * Consommation du quota mensuel d'un salon.
+   *
+   * Les réservations annulées ne sont pas comptées : un client qui réserve
+   * puis se décommande ne doit pas amputer le quota du salon, qui n'a rien
+   * consommé. On compte sur `createdAt` et non `startsAt`, parce que c'est
+   * l'acte de réserver qui est facturé, pas la date du rendez-vous.
+   */
+  async quotaForSalon(salonId: string): Promise<QuotaStatus> {
+    const { start, end } = currentLocalMonthRange();
+
+    const [salon, used] = await Promise.all([
+      this.prisma.salon.findUnique({
+        where: { id: salonId },
+        select: { plan: true },
+      }),
+      this.prisma.reservation.count({
+        where: {
+          salonId,
+          status: { not: 'CANCELED' },
+          createdAt: { gte: start, lt: end },
+        },
+      }),
+    ]);
+
+    if (!salon) {
+      throw new NotFoundException('Salon introuvable');
+    }
+
+    return buildQuotaStatus(salon.plan, used, end);
+  }
+
+  /** Quota du salon du gérant connecté. */
+  async quotaForManager(userId: string): Promise<QuotaStatus> {
+    const salon = await this.getOwnedSalon(userId);
+    return this.quotaForSalon(salon.id);
+  }
+
   /**
    * Plafonds par numéro de téléphone.
    *
