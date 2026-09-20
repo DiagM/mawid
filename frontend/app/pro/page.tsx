@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { ApiError } from '@/lib/api';
 import { getAgenda, getMe, type AgendaReservation } from '@/lib/api-pro';
 import { fr } from '@/lib/i18n/fr';
 import {
@@ -34,7 +35,23 @@ export default async function AgendaPage({ searchParams }: PageProps) {
   }
 
   const day = date ?? todayLocalDate();
-  const reservations = await getAgenda(token, day, day);
+
+  // Un compte peut n'avoir aucun salon : c'est le cas du fondateur, dont le
+  // rôle est d'administrer la plateforme et non de tenir un agenda. Laisser
+  // remonter le 404 afficherait un écran d'erreur serveur pour une situation
+  // parfaitement normale.
+  let reservations: AgendaReservation[];
+  try {
+    reservations = await getAgenda(token, day, day);
+  } catch (error) {
+    if (error instanceof ApiError && error.isNotFound) {
+      if (me.role === 'ADMIN') {
+        redirect('/admin');
+      }
+      return <NoSalon />;
+    }
+    throw error;
+  }
 
   const honoredRevenue = reservations
     .filter((reservation) => reservation.status === 'HONORED')
@@ -188,5 +205,23 @@ function StatusButton({
         {label}
       </button>
     </form>
+  );
+}
+
+/**
+ * Écran d'un compte sans salon.
+ *
+ * Ne devrait pas arriver à un gérant — son salon est créé avec son compte —
+ * mais un état impossible affiché clairement vaut mieux qu'une page blanche
+ * avec une trace de pile.
+ */
+function NoSalon() {
+  return (
+    <main className="mx-auto w-full max-w-2xl px-4 py-6">
+      <div className="rounded-xl border border-border bg-surface p-6 text-center">
+        <p className="font-medium">{fr.pro.noSalon}</p>
+        <p className="mt-1 text-sm text-muted">{fr.pro.noSalonHelp}</p>
+      </div>
+    </main>
   );
 }

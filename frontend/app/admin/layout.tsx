@@ -50,11 +50,15 @@ export default async function AdminLayout({
                 {link.label}
               </Link>
             ))}
+            {/* Vers le site public et non vers `/pro` : un fondateur n'a
+                pas de salon, et `/pro` le renverrait aussitôt ici — un lien
+                qui semble ne rien faire. Voir la plateforme telle que la
+                voient les clientes est en revanche toujours utile. */}
             <Link
-              href="/pro"
+              href="/"
               className="rounded-lg px-3 py-1.5 text-muted transition hover:bg-bg hover:text-fg"
             >
-              {fr.admin.nav.backToPro}
+              {fr.admin.nav.publicSite}
             </Link>
           </nav>
         </div>

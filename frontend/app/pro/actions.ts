@@ -65,18 +65,30 @@ export async function loginAction(
     return { error: fr.pro.invalidCredentials };
   }
 
-  let mustChangePassword: boolean;
+  let destination: string;
   try {
     const result = await pro.login(phone, password);
     await createSession(result.accessToken);
-    mustChangePassword = result.user.mustChangePassword;
+
+    if (result.user.mustChangePassword) {
+      // Un secret connu de deux personnes ne doit pas durer : aucun autre
+      // écran n'est accessible avant le remplacement.
+      destination = '/pro/mot-de-passe';
+    } else if (result.user.role === 'ADMIN') {
+      // Le fondateur n'a pas de salon : l'envoyer sur l'agenda ferait
+      // échouer le chargement sur « Aucun salon n'est associé à votre
+      // compte », ce qui ressemble à une panne alors que tout va bien.
+      destination = '/admin';
+    } else {
+      destination = '/pro';
+    }
   } catch (error) {
     return { error: toMessage(error, fr.pro.invalidCredentials) };
   }
 
   // `redirect` lève une exception de contrôle de flux : il doit rester hors
   // du try/catch, sinon il serait intercepté comme une erreur.
-  redirect(mustChangePassword ? '/pro/mot-de-passe' : '/pro');
+  redirect(destination);
 }
 
 /**

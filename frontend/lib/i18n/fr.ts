@@ -156,6 +156,9 @@ export const fr = {
   },
 
   pro: {
+    noSalon: 'Aucun salon n’est associé à ce compte.',
+    noSalonHelp:
+      'Ce compte administre la plateforme sans tenir d’agenda. Contactez Mawid si vous pensez qu’il s’agit d’une erreur.',
     title: 'Espace gérant',
     login: 'Connexion',
     loginSubtitle: 'Accédez à l’agenda de votre salon.',
@@ -501,7 +504,7 @@ export const fr = {
       salons: 'Salons',
       managers: 'Nouveau salon',
       reviews: 'Modération',
-      backToPro: 'Mon salon',
+      publicSite: 'Site public',
     },
     saved: 'Enregistré.',
     forbidden: 'Cette action demande un compte administrateur.',
