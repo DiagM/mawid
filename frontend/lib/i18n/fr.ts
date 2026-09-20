@@ -336,6 +336,41 @@ export const fr = {
       notPersisted:
         'Le suivi des envois n’est pas conservé si vous rechargez la page.',
       preview: 'Aperçu pour {name}',
+
+      mode: 'Comment envoyer',
+      modeBroadcast: 'Liste de diffusion',
+      modeBroadcastHelp:
+        'Un seul envoi pour tout le monde, gratuit. Le message est identique pour tous.',
+      modeQueue: 'Un par un',
+      modeQueueHelp:
+        'Un clic par cliente, mais le message porte son prénom et atteint tout le monde.',
+
+      broadcastSteps: [
+        'Copiez les numéros ci-dessous.',
+        'Dans WhatsApp, ouvrez « Nouvelle diffusion » et collez-y les numéros.',
+        'Copiez le message, collez-le dans la conversation de diffusion, envoyez.',
+      ],
+      broadcastCaveat:
+        'Une diffusion WhatsApp n’arrive qu’aux personnes qui ont enregistré votre numéro dans leurs contacts. C’est une règle de WhatsApp : vous ne saurez pas qui ne l’a pas reçue. Pour être sûr d’atteindre quelqu’un, utilisez « Un par un ».',
+      broadcastMessage: 'Message à diffuser',
+      broadcastPlaceholderText:
+        'Bonjour ! Nous avons de la place cette semaine, au plaisir de vous revoir.',
+      broadcastNoPlaceholder:
+        'Une diffusion ne peut pas être personnalisée : le même texte part à tout le monde.',
+      broadcastPlaceholder:
+        'Votre message contient {prenom}, qui ne sera pas remplacé en diffusion. Retirez-le, ou passez en « Un par un ».',
+      numbers: 'Numéros',
+      batchTitle: 'Lot {index} sur {total}',
+      copyMessage: 'Copier le message',
+      copyNumbers: 'Copier les numéros',
+      copied: 'Copié',
+      copyFailed:
+        'La copie automatique a échoué. Sélectionnez le texte ci-dessous et copiez-le à la main.',
+
+      sendAndNext: 'Ouvrir WhatsApp, puis suivante',
+      skip: 'Passer',
+      queueDone: 'Vous avez fait le tour de la liste.',
+      queueRestart: 'Recommencer',
     },
 
     clients: {

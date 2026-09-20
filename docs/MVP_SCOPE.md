@@ -413,6 +413,37 @@ serveur au lieu d'échanger deux valeurs : `displayOrder` n'est pas unique et
 vaut souvent 0 pour plusieurs membres, un échange entre deux zéros ne
 changerait rien et le gérant cliquerait dans le vide.
 
+**Lot 10 — Campagnes : deux stratégies, pas deux variantes.** ✅ Livré le
+2026-09-20.
+
+**Ce qui n'existe pas et n'existera pas gratuitement.** Un envoi WhatsApp de
+masse, automatisé, sans rien payer. L'API officielle facture les messages
+marketing ; les bibliothèques non officielles (`whatsapp-web.js`, Baileys)
+sont gratuites en logiciel mais violent les CGU, font bannir le numéro du
+salon, et exigent un serveur allumé en permanence gardant une session vivante
+par salon — donc une dépense, et une responsabilité sur le numéro d'un
+client. « Automatisé » et « je ne paie rien » sont contradictoires.
+
+**Ce qui existe donc à la place** : deux modes, qui ne sont pas deux versions
+de la même idée.
+
+| | Atteint | Message | Coût |
+|---|---|---|---|
+| Liste de diffusion | Seulement ceux qui ont enregistré le numéro du salon | Identique pour tous | Gratuit |
+| Un par un | Tout le monde | Personnalisé | Un clic par personne |
+
+La diffusion est le seul envoi en masse réellement gratuit : elle part du
+téléphone du gérant, en un envoi. Ses deux limites sont **affichées** plutôt
+que laissées à découvrir — pas de personnalisation, et les destinataires
+doivent avoir le numéro du salon dans leurs contacts, sans quoi le message
+n'arrive pas et l'expéditeur ne le sait jamais. Les lots de 256 sont
+découpés d'avance : la limite se découvrirait sinon à la 257e cliente.
+
+L'envoi un par un ne supprime pas le clic — il supprime tout le reste : une
+seule cliente à l'écran, un bouton, la suivante, avec une progression
+visible. La copie du presse-papier a un repli explicite, `navigator.clipboard`
+n'existant pas hors contexte sécurisé.
+
 ## 6. Hors périmètre, quelle que soit la version
 
 - Application mobile native — le business plan lui-même tranche : « PWA
