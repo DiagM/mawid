@@ -200,7 +200,13 @@ export function createEmployee(
 export function updateEmployee(
   token: string,
   id: string,
-  input: { fullName?: string; isActive?: boolean; displayOrder?: number },
+  input: {
+    fullName?: string;
+    isActive?: boolean;
+    displayOrder?: number;
+    /** `null` = le membre suit les horaires du salon. */
+    workingHours?: OpeningHours | null;
+  },
 ): Promise<ManagedEmployee> {
   return apiFetch<ManagedEmployee>(`/employees/${encodeURIComponent(id)}`, {
     method: 'PATCH',
@@ -554,6 +560,9 @@ export interface BlockedSlot {
   localStartTime: string;
   localEndTime: string;
   reason: string | null;
+  /** `null` = tout le salon est indisponible. */
+  employeeId: string | null;
+  employeeName: string | null;
 }
 
 export function getBlockedSlots(
@@ -571,7 +580,13 @@ export function getBlockedSlots(
 
 export function createBlockedSlot(
   token: string,
-  input: { startsAt: string; endsAt: string; reason?: string },
+  input: {
+    startsAt: string;
+    endsAt: string;
+    reason?: string;
+    /** Omis : tout le salon. Renseigné : ce membre seulement. */
+    employeeId?: string;
+  },
 ): Promise<BlockedSlot> {
   return apiFetch<BlockedSlot>('/blocked-slots', {
     method: 'POST',

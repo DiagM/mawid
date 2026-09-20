@@ -388,6 +388,31 @@ puisque l'unicité porte sur `reservationId`.
 (`prisma/create-admin.ts`), et elle y restera. Une route qui créerait le
 premier compte administrateur devrait être ouverte à tous.
 
+**Lot 9 — Équipe complète.** ✅ Livré le 2026-09-20.
+
+**Le trou qu'il comble.** Le produit vendait du multi-employés depuis la V2,
+mais le gérant n'avait aucun moyen de dire que Nadia ne travaille pas le
+lundi : `Employee.workingHours` et `BlockedSlot.employeeId` existaient en
+base, le moteur de disponibilité les respectait déjà, et **aucun formulaire
+ne permettait de les renseigner**. `BlockedSlot.employeeId` n'était même pas
+accepté par le DTO. Conséquence concrète : un jour d'absence fermait le salon
+entier, y compris pour les collègues présents.
+
+**Périmètre du conflit.** Un blocage ne regarde que les rendez-vous qu'il
+peut réellement gêner : ceux du membre visé, ou tous quand le blocage vaut
+pour le salon. Compter ceux des collègues rendrait impossible de poser un
+congé dans un salon qui tourne.
+
+**`null` n'est pas « fermé sept jours ».** `workingHours = null` fait suivre
+les horaires du salon ; une semaine entièrement décochée rend le membre
+indisponible en permanence. Deux intentions opposées, que l'interface sépare
+par une case à cocher explicite plutôt que par l'absence de saisie.
+
+**Ordre d'affichage.** Remonter un membre renumérote toute la liste côté
+serveur au lieu d'échanger deux valeurs : `displayOrder` n'est pas unique et
+vaut souvent 0 pour plusieurs membres, un échange entre deux zéros ne
+changerait rien et le gérant cliquerait dans le vide.
+
 ## 6. Hors périmètre, quelle que soit la version
 
 - Application mobile native — le business plan lui-même tranche : « PWA

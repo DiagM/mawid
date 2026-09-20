@@ -232,6 +232,12 @@ export const fr = {
         'Aucun membre. Sans équipe, votre salon accepte un rendez-vous à la fois.',
       help:
         'Chaque membre peut recevoir un client en parallèle des autres. Le premier membre ajouté reprend vos rendez-vous à venir.',
+      hours: 'Horaires',
+      followsSalon: 'Suit les horaires du salon',
+      customHours: 'Horaires personnalisés',
+      hoursHelp:
+        'Décocher « suit les horaires du salon » permet de définir des heures propres à ce membre. Attention : décocher aussi tous les jours le rendrait indisponible en permanence.',
+      moveUp: 'Remonter dans la liste',
       archiveHelp:
         'Un membre ne peut être archivé que lorsqu’il n’a plus de rendez-vous à venir.',
     },
@@ -442,6 +448,11 @@ export const fr = {
       end: 'Fin',
       reason: 'Motif (optionnel)',
       reasonPlaceholder: 'Pause déjeuner',
+      who: 'Qui est indisponible ?',
+      wholeSalon: 'Tout le salon',
+      forEmployee: 'Absence : {name}',
+      whoHelp:
+        'Viser une personne laisse le reste de l’équipe disponible. « Tout le salon » ferme pour tout le monde.',
       remove: 'Supprimer',
       empty: 'Aucune indisponibilité à venir.',
       help:

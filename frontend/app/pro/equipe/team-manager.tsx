@@ -6,9 +6,11 @@ import { fr } from '@/lib/i18n/fr';
 import {
   archiveEmployeeAction,
   createEmployeeAction,
+  moveEmployeeAction,
   restoreEmployeeAction,
   type ActionState,
 } from '../actions';
+import { EmployeeHours } from './employee-hours';
 
 const initialState: ActionState = {};
 
@@ -33,41 +35,63 @@ export function TeamManager({ employees }: { employees: ManagedEmployee[] }) {
         </p>
       ) : (
         <ul className="mb-4 space-y-2">
-          {employees.map((employee) => (
+          {employees.map((employee, index) => (
             <li
               key={employee.id}
-              className={`flex items-center justify-between gap-4 rounded-xl border border-border bg-surface p-4 ${
+              className={`rounded-xl border border-border bg-surface p-4 ${
                 employee.isActive ? '' : 'opacity-60'
               }`}
             >
-              <div>
-                <p className="font-medium">{employee.fullName}</p>
-                {!employee.isActive && (
-                  <p className="text-sm text-muted">{fr.pro.team.archived}</p>
-                )}
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-medium">{employee.fullName}</p>
+                  {!employee.isActive && (
+                    <p className="text-sm text-muted">{fr.pro.team.archived}</p>
+                  )}
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  {/* Ordre d'affichage dans le sélecteur « avec qui ? » vu
+                      par le client. On remonte le membre d'un cran ;
+                      le serveur renumérote toute la liste. */}
+                  {employee.isActive && index > 0 && (
+                    <form action={moveEmployeeAction}>
+                      <input type="hidden" name="id" value={employee.id} />
+                      <button
+                        type="submit"
+                        aria-label={fr.pro.team.moveUp}
+                        className="h-10 w-10 rounded-xl border border-border text-sm"
+                      >
+                        ↑
+                      </button>
+                    </form>
+                  )}
+
+                  {employee.isActive ? (
+                    <form action={archiveAction}>
+                      <input type="hidden" name="id" value={employee.id} />
+                      <button
+                        type="submit"
+                        className="h-10 rounded-xl border border-border px-4 text-sm font-medium"
+                      >
+                        {fr.pro.team.archive}
+                      </button>
+                    </form>
+                  ) : (
+                    <form action={restoreEmployeeAction}>
+                      <input type="hidden" name="id" value={employee.id} />
+                      <button
+                        type="submit"
+                        className="h-10 rounded-xl border border-accent px-4 text-sm font-medium text-accent"
+                      >
+                        {fr.pro.team.restore}
+                      </button>
+                    </form>
+                  )}
+                </div>
               </div>
 
-              {employee.isActive ? (
-                <form action={archiveAction}>
-                  <input type="hidden" name="id" value={employee.id} />
-                  <button
-                    type="submit"
-                    className="h-10 shrink-0 rounded-xl border border-border px-4 text-sm font-medium"
-                  >
-                    {fr.pro.team.archive}
-                  </button>
-                </form>
-              ) : (
-                <form action={restoreEmployeeAction}>
-                  <input type="hidden" name="id" value={employee.id} />
-                  <button
-                    type="submit"
-                    className="h-10 shrink-0 rounded-xl border border-accent px-4 text-sm font-medium text-accent"
-                  >
-                    {fr.pro.team.restore}
-                  </button>
-                </form>
-              )}
+              {employee.isActive && <EmployeeHours employee={employee} />}
             </li>
           ))}
         </ul>

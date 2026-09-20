@@ -32,6 +32,7 @@ describe('BlockedSlotsService', () => {
       delete: jest.Mock;
     };
     reservation: { count: jest.Mock };
+    employee: { findFirst: jest.Mock };
   };
 
   beforeEach(async () => {
@@ -49,6 +50,7 @@ describe('BlockedSlotsService', () => {
         delete: jest.fn().mockResolvedValue({}),
       },
       reservation: { count: jest.fn().mockResolvedValue(0) },
+      employee: { findFirst: jest.fn().mockResolvedValue({ id: 'emp-1' }) },
     };
 
     const moduleRef = await Test.createTestingModule({
@@ -161,6 +163,83 @@ describe('BlockedSlotsService', () => {
       }>(prisma.reservation.count);
       expect(query.where.salonId).toBe(SALON_A);
       expect(query.where.status).toBe('CONFIRMED');
+    });
+  });
+
+  describe('absence d’un seul membre', () => {
+    it('rattache le blocage au membre demandé', async () => {
+      await service.create(GERANT_A, {
+        startsAt: '2026-10-05T11:00:00.000Z',
+        endsAt: '2026-10-05T12:00:00.000Z',
+        employeeId: 'emp-1',
+      });
+
+      const args = firstArg<{ data: { employeeId: string | null } }>(
+        prisma.blockedSlot.create,
+      );
+      expect(args.data.employeeId).toBe('emp-1');
+    });
+
+    it('ne compte que les rendez-vous de ce membre', async () => {
+      await service.create(GERANT_A, {
+        startsAt: '2026-10-05T11:00:00.000Z',
+        endsAt: '2026-10-05T12:00:00.000Z',
+        employeeId: 'emp-1',
+      });
+
+      // Compter ceux des collègues empêcherait de poser un congé dans un
+      // salon qui tourne.
+      const args = firstArg<{ where: { employeeId?: string } }>(
+        prisma.reservation.count,
+      );
+      expect(args.where.employeeId).toBe('emp-1');
+    });
+
+    it('sans membre, bloque tout le salon et voit tous les RDV', async () => {
+      await service.create(GERANT_A, {
+        startsAt: '2026-10-05T11:00:00.000Z',
+        endsAt: '2026-10-05T12:00:00.000Z',
+      });
+
+      const countArgs = firstArg<{ where: Record<string, unknown> }>(
+        prisma.reservation.count,
+      );
+      expect(countArgs.where).not.toHaveProperty('employeeId');
+
+      const createArgs = firstArg<{ data: { employeeId: string | null } }>(
+        prisma.blockedSlot.create,
+      );
+      expect(createArgs.data.employeeId).toBeNull();
+    });
+
+    it('refuse un membre d’un autre salon', async () => {
+      // Le filtre porte sur (id, salonId) : un membre du salon B ne remonte
+      // pas. L'ignorer transformerait une absence individuelle en fermeture
+      // du salon entier.
+      prisma.employee.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.create(GERANT_A, {
+          startsAt: '2026-10-05T11:00:00.000Z',
+          endsAt: '2026-10-05T12:00:00.000Z',
+          employeeId: 'emp-du-salon-b',
+        }),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(prisma.blockedSlot.create).not.toHaveBeenCalled();
+    });
+
+    it('recoupe toujours le membre avec le salon du gérant', async () => {
+      await service.create(GERANT_A, {
+        startsAt: '2026-10-05T11:00:00.000Z',
+        endsAt: '2026-10-05T12:00:00.000Z',
+        employeeId: 'emp-1',
+      });
+
+      const args = firstArg<{ where: { id: string; salonId: string } }>(
+        prisma.employee.findFirst,
+      );
+      expect(args.where).toEqual({ id: 'emp-1', salonId: SALON_A });
     });
   });
 });

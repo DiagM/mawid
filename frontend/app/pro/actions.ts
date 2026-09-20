@@ -150,34 +150,9 @@ export async function updateSalonAction(
 ): Promise<ActionState> {
   const token = await requireSessionToken();
 
-  const openingHours: Record<string, { open: string; close: string } | null> =
-    {};
-
-  for (const day of [
-    'monday',
-    'tuesday',
-    'wednesday',
-    'thursday',
-    'friday',
-    'saturday',
-    'sunday',
-  ]) {
-    const isOpen = formData.get(`${day}-open`) === 'on';
-    const from = String(formData.get(`${day}-from`) ?? '');
-    const to = String(formData.get(`${day}-to`) ?? '');
-
-    if (!isOpen || !from || !to) {
-      openingHours[day] = null;
-      continue;
-    }
-
-    // Une fermeture antérieure à l'ouverture produirait une journée sans
-    // aucun créneau, sans que le gérant comprenne pourquoi.
-    if (to <= from) {
-      return { error: fr.pro.salon.invalidHours };
-    }
-
-    openingHours[day] = { open: from, close: to };
+  const openingHours = parseWeekHours(formData);
+  if (openingHours === null) {
+    return { error: fr.pro.salon.invalidHours };
   }
 
   try {
@@ -514,6 +489,9 @@ export async function createBlockedSlotAction(
   const start = String(formData.get('start') ?? '');
   const end = String(formData.get('end') ?? '');
   const reason = String(formData.get('reason') ?? '');
+  // Vide = tout le salon. C'est le comportement d'un salon sans équipe, et
+  // celui d'une vraie fermeture ; viser une personne est le cas particulier.
+  const employeeId = String(formData.get('employeeId') ?? '');
 
   if (!date || !start || !end) {
     return { error: fr.common.error };
@@ -533,6 +511,7 @@ export async function createBlockedSlotAction(
       startsAt,
       endsAt,
       reason: reason || undefined,
+      employeeId: employeeId || undefined,
     });
   } catch (error) {
     return { error: toMessage(error, fr.common.error) };
@@ -588,4 +567,134 @@ function localToUtcIso(date: string, time: string): string {
 
   const offsetMinutes = (wallClockAsUtc - naive) / 60_000;
   return new Date(naive - offsetMinutes * 60_000).toISOString();
+}
+
+// ============================================
+// Horaires hebdomadaires — salon et membres
+// ============================================
+
+const WEEK_DAYS = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+] as const;
+
+export type WeekHours = Record<
+  string,
+  { open: string; close: string } | null
+>;
+
+/**
+ * Lit les sept jours d'un formulaire d'horaires.
+ *
+ * Partagé par le salon et par chaque membre de l'équipe : les deux stockent
+ * la même structure, et dupliquer cette boucle ferait dériver les deux
+ * validations au premier changement.
+ *
+ * @param prefix distingue les champs quand plusieurs formulaires coexistent
+ * @returns `null` si une journée se termine avant de commencer
+ */
+function parseWeekHours(formData: FormData, prefix = ''): WeekHours | null {
+  const hours: WeekHours = {};
+
+  for (const day of WEEK_DAYS) {
+    const isOpen = formData.get(`${prefix}${day}-open`) === 'on';
+    const from = String(formData.get(`${prefix}${day}-from`) ?? '');
+    const to = String(formData.get(`${prefix}${day}-to`) ?? '');
+
+    if (!isOpen || !from || !to) {
+      hours[day] = null;
+      continue;
+    }
+
+    // Une fermeture antérieure à l'ouverture produirait une journée sans
+    // aucun créneau, sans que le gérant comprenne pourquoi.
+    if (to <= from) {
+      return null;
+    }
+
+    hours[day] = { open: from, close: to };
+  }
+
+  return hours;
+}
+
+/**
+ * Horaires individuels d'un membre.
+ *
+ * La case « suit les horaires du salon » envoie `null`, ce qui n'est PAS la
+ * même chose qu'une semaine entièrement fermée : `null` fait suivre le salon,
+ * sept jours fermés rendent le membre indisponible en permanence. Deux
+ * intentions opposées que le formulaire doit garder distinctes.
+ */
+export async function updateEmployeeHoursAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const token = await requireSessionToken();
+  const id = String(formData.get('id') ?? '');
+  const followsSalon = formData.get('followsSalon') === 'on';
+
+  let workingHours: WeekHours | null = null;
+
+  if (!followsSalon) {
+    workingHours = parseWeekHours(formData, `${id}-`);
+    if (workingHours === null) {
+      return { error: fr.pro.salon.invalidHours };
+    }
+  }
+
+  try {
+    await pro.updateEmployee(token, id, { workingHours });
+  } catch (error) {
+    return { error: toMessage(error, fr.common.error) };
+  }
+
+  revalidatePath('/pro/equipe');
+  return { success: fr.pro.saved };
+}
+
+/**
+ * Remonte un membre d'une position dans le sélecteur « avec qui ? ».
+ *
+ * On réécrit les positions de toute la liste (0, 1, 2…) plutôt que
+ * d'échanger deux valeurs : `displayOrder` n'est pas unique et vaut souvent
+ * 0 pour plusieurs membres à la fois — les créations successives partent du
+ * nombre de membres existants, mais rien ne garantit la suite après des
+ * archivages. Un échange sur deux zéros ne changerait rien, et le gérant
+ * cliquerait dans le vide.
+ */
+export async function moveEmployeeAction(formData: FormData): Promise<void> {
+  const token = await requireSessionToken();
+  const id = String(formData.get('id') ?? '');
+
+  const employees = (await pro.getMyEmployees(token)).filter(
+    (employee) => employee.isActive,
+  );
+
+  const index = employees.findIndex((employee) => employee.id === id);
+  if (index <= 0) {
+    return;
+  }
+
+  const reordered = [...employees];
+  [reordered[index - 1], reordered[index]] = [
+    reordered[index],
+    reordered[index - 1],
+  ];
+
+  await Promise.all(
+    reordered
+      .map((employee, position) => ({ employee, position }))
+      .filter(({ employee, position }) => employee.displayOrder !== position)
+      .map(({ employee, position }) =>
+        pro.updateEmployee(token, employee.id, { displayOrder: position }),
+      ),
+  );
+
+  revalidatePath('/pro/equipe');
 }

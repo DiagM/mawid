@@ -46,6 +46,7 @@ export class BlockedSlotsService {
         endsAt: { gt: start },
       },
       orderBy: { startsAt: 'asc' },
+      include: { employee: { select: { fullName: true } } },
     });
 
     return slots.map((slot) => this.toView(slot));
@@ -71,16 +72,23 @@ export class BlockedSlotsService {
       );
     }
 
+    const employeeId = await this.resolveEmployeeId(salon.id, dto.employeeId);
+
     // Bloquer un créneau déjà réservé laisserait le client avec un RDV que le
     // salon considère comme indisponible. On refuse, à charge pour le gérant
     // d'annuler explicitement le RDV d'abord — c'est une décision qui doit
     // rester consciente.
+    //
+    // Le périmètre du conflit suit celui du blocage : l'absence d'un membre
+    // ne regarde que SES rendez-vous. Compter ceux de ses collègues
+    // empêcherait de poser un jour de congé dans un salon qui tourne.
     const conflicting = await this.prisma.reservation.count({
       where: {
         salonId: salon.id,
         status: 'CONFIRMED',
         startsAt: { lt: endsAt },
         endsAt: { gt: startsAt },
+        ...(employeeId !== null && { employeeId }),
       },
     });
 
@@ -94,10 +102,12 @@ export class BlockedSlotsService {
     const slot = await this.prisma.blockedSlot.create({
       data: {
         salonId: salon.id,
+        employeeId,
         startsAt,
         endsAt,
         reason: dto.reason,
       },
+      include: { employee: { select: { fullName: true } } },
     });
 
     return this.toView(slot);
@@ -139,11 +149,41 @@ export class BlockedSlotsService {
     return salon;
   }
 
+  /**
+   * Valide le membre visé par un blocage.
+   *
+   * Ne jamais faire confiance à l'identifiant reçu (CLAUDE.md §3.2) : on le
+   * recoupe avec le salon du gérant connecté. Un membre appartenant à un
+   * autre salon doit être refusé et non ignoré — l'ignorer transformerait
+   * silencieusement une absence individuelle en fermeture du salon entier.
+   */
+  private async resolveEmployeeId(
+    salonId: string,
+    employeeId?: string,
+  ): Promise<string | null> {
+    if (!employeeId) {
+      return null;
+    }
+
+    const employee = await this.prisma.employee.findFirst({
+      where: { id: employeeId, salonId },
+      select: { id: true },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Membre introuvable pour ce salon');
+    }
+
+    return employee.id;
+  }
+
   private toView(slot: {
     id: string;
     startsAt: Date;
     endsAt: Date;
     reason: string | null;
+    employeeId?: string | null;
+    employee?: { fullName: string } | null;
   }) {
     return {
       id: slot.id,
@@ -153,6 +193,10 @@ export class BlockedSlotsService {
       localStartTime: utcToLocalTime(slot.startsAt),
       localEndTime: utcToLocalTime(slot.endsAt),
       reason: slot.reason,
+      employeeId: slot.employeeId ?? null,
+      // `null` = tout le salon. Le front a besoin du nom, pas de
+      // l'identifiant, pour afficher « Absence : Nadia ».
+      employeeName: slot.employee?.fullName ?? null,
     };
   }
 }

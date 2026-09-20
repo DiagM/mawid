@@ -1,4 +1,5 @@
 import { OnSitePaymentProvider } from './on-site-payment.provider';
+import type { PaymentProvider } from './payment-provider';
 
 const REQUEST = {
   reservationId: 'res-1',
@@ -7,7 +8,11 @@ const REQUEST = {
 };
 
 describe('OnSitePaymentProvider', () => {
-  const provider = new OnSitePaymentProvider();
+  // Typé par l'INTERFACE et non par la classe concrète. L'implémentation
+  // actuelle n'a besoin d'aucun argument et n'en déclare donc aucun ; la
+  // tester telle quelle vérifierait ce raccourci plutôt que le contrat que
+  // SATIM devra remplir un jour.
+  const provider: PaymentProvider = new OnSitePaymentProvider();
 
   it("n'exige jamais d'acompte en ligne", async () => {
     // Imposer un prepaiement sans passerelle bloquerait des reservations

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getBlockedSlots } from '@/lib/api-pro';
+import { getBlockedSlots, getMyEmployees } from '@/lib/api-pro';
 import { fr } from '@/lib/i18n/fr';
 import { formatLongDate, todayLocalDate } from '@/lib/format';
 import { requireSessionToken } from '@/lib/session';
@@ -11,7 +11,11 @@ export const metadata: Metadata = { title: fr.pro.blocked.title };
 export default async function BlockedSlotsPage() {
   const token = await requireSessionToken();
   const today = todayLocalDate();
-  const slots = await getBlockedSlots(token);
+  const [slots, employees] = await Promise.all([
+    getBlockedSlots(token),
+    getMyEmployees(token),
+  ]);
+  const activeEmployees = employees.filter((employee) => employee.isActive);
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-6">
@@ -37,6 +41,16 @@ export default async function BlockedSlotsPage() {
                   {slot.localStartTime} – {slot.localEndTime}
                   {slot.reason && ` · ${slot.reason}`}
                 </p>
+                {/* Sans cette ligne, une absence individuelle et une
+                    fermeture du salon se ressemblent trait pour trait. */}
+                <p className="text-sm text-muted">
+                  {slot.employeeName
+                    ? fr.pro.blocked.forEmployee.replace(
+                        '{name}',
+                        slot.employeeName,
+                      )
+                    : fr.pro.blocked.wholeSalon}
+                </p>
               </div>
 
               <form action={deleteBlockedSlotAction}>
@@ -53,7 +67,7 @@ export default async function BlockedSlotsPage() {
         </ul>
       )}
 
-      <BlockedForm today={today} />
+      <BlockedForm today={today} employees={activeEmployees} />
     </main>
   );
 }
