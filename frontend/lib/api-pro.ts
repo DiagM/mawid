@@ -269,6 +269,82 @@ export function updateReservationStatus(
 }
 
 // ============================================
+// Quota et offre (V3)
+// ============================================
+
+export interface QuotaStatus {
+  plan: 'FREE' | 'PRO' | 'PRO_PLUS';
+  /** `null` = illimité, aucun blocage possible. */
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+  /** Le prochain client serait refusé. */
+  isExceeded: boolean;
+  /** Assez proche de la limite pour prévenir le gérant. */
+  isNearLimit: boolean;
+  resetsAt: string;
+}
+
+export function getQuota(token: string): Promise<QuotaStatus> {
+  return apiFetch<QuotaStatus>('/reservations/quota', { token });
+}
+
+// ============================================
+// Fiches clients (V3)
+// ============================================
+
+export interface ClientRow {
+  id: string;
+  firstName: string;
+  phone: string;
+  isBlocked: boolean;
+  visits: number;
+  noShows: number;
+  canceled: number;
+  totalSpentCents: number;
+  lastVisit: string | null;
+  nextVisit: string | null;
+}
+
+export function getClients(
+  token: string,
+  query?: string,
+): Promise<{ total: number; items: ClientRow[] }> {
+  const suffix = query ? `?q=${encodeURIComponent(query)}` : '';
+  return apiFetch<{ total: number; items: ClientRow[] }>(
+    `/clients${suffix}`,
+    { token },
+  );
+}
+
+export interface ClientReservation {
+  id: string;
+  localDate: string;
+  startsAt: string;
+  status: 'CONFIRMED' | 'HONORED' | 'NO_SHOW' | 'CANCELED';
+  employeeName: string | null;
+  internalNote: string | null;
+  prestations: { name: string; priceCents: number }[];
+  totalPriceCents: number;
+}
+
+export interface ClientDetail {
+  id: string;
+  firstName: string;
+  phone: string;
+  reservations: ClientReservation[];
+}
+
+export function getClient(
+  token: string,
+  id: string,
+): Promise<ClientDetail> {
+  return apiFetch<ClientDetail>(`/clients/${encodeURIComponent(id)}`, {
+    token,
+  });
+}
+
+// ============================================
 // Statistiques (V2)
 // ============================================
 

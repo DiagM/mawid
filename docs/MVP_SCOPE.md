@@ -133,6 +133,8 @@ Ces huit points ont été proposés puis validés explicitement. Ils ne sont plu
 | Choix du membre dans le tunnel client | ✅ Fait — masqué si le salon n'a pas d'équipe |
 | Avis : dépôt, fiche salon, recherche, `/pro/avis` | ✅ Fait |
 | Statistiques `/pro/statistiques` | ✅ Fait — 7/30/90 jours |
+| Fiches clients `/pro/clients` et `/pro/clients/[id]` | ✅ Fait |
+| Bandeau de quota (alerte à 80 %, blocage à 100 %) | ✅ Fait |
 
 ## 5. Ordre de construction
 
@@ -277,8 +279,13 @@ Les fiches clients n'exposent que ce que **ce** salon a vécu avec le client,
 jamais ses rendez-vous ailleurs, alors même que l'entité `Client` est
 partagée entre salons.
 
-Reste : interface du back-office (quota, clients), campagnes `wa.me`
-manuelles, mise en avant.
+Interface livrée le 2026-09-20 : bandeau de quota visible depuis tous les
+écrans du back-office, avec **deux niveaux distincts** — « bientôt à court »
+laisse le temps de réagir, « limite atteinte » signale que des clients sont
+déjà refusés. Confondre les deux ferait manquer la fenêtre où le gérant peut
+encore agir. Plus les pages clients, liste et fiche détaillée.
+
+Reste : campagnes `wa.me` manuelles, mise en avant.
 
 **Lot 7 — V4.** Caisse, stocks, multi-villes, abstraction paiement.
 

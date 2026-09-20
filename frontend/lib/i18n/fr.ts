@@ -213,6 +213,7 @@ export const fr = {
       team: 'Équipe',
       reviews: 'Avis',
       stats: 'Statistiques',
+      clients: 'Clients',
       blocked: 'Indisponibilités',
     },
 
@@ -229,6 +230,42 @@ export const fr = {
         'Chaque membre peut recevoir un client en parallèle des autres. Le premier membre ajouté reprend vos rendez-vous à venir.',
       archiveHelp:
         'Un membre ne peut être archivé que lorsqu’il n’a plus de rendez-vous à venir.',
+    },
+
+    quota: {
+      nearLimitTitle: 'Bientôt à court de réservations',
+      nearLimit:
+        'Il vous reste {remaining} réservation(s) en ligne ce mois-ci sur votre offre gratuite.',
+      exceededTitle: 'Limite mensuelle atteinte',
+      exceeded:
+        'Vos clients ne peuvent plus réserver en ligne ce mois-ci. Ils peuvent toujours vous appeler.',
+      resets: 'Remise à zéro le {date}.',
+      upgrade: 'Contactez Mawid pour passer à l’offre Pro.',
+      used: '{used} / {limit} réservations ce mois-ci',
+      unlimited: 'Réservations illimitées',
+    },
+
+    clients: {
+      title: 'Clients',
+      search: 'Rechercher un client',
+      searchPlaceholder: 'Prénom ou numéro…',
+      empty: 'Aucun client pour le moment.',
+      emptyHelp: 'Vos clients apparaîtront ici après leur premier rendez-vous.',
+      noResult: 'Aucun client ne correspond à cette recherche.',
+      visits: 'visite',
+      visitsPlural: 'visites',
+      noShows: 'absence',
+      noShowsPlural: 'absences',
+      spent: 'dépensé',
+      lastVisit: 'Dernière visite',
+      nextVisit: 'Prochain RDV',
+      never: 'Jamais venu',
+      blocked: 'Bloqué',
+      history: 'Historique',
+      call: 'Appeler',
+      whatsapp: 'WhatsApp',
+      back: 'Tous les clients',
+      notFound: 'Client introuvable',
     },
 
     stats: {

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fr } from '@/lib/i18n/fr';
-import { getMySalon } from '@/lib/api-pro';
+import { formatLongDate } from '@/lib/format';
+import { getMySalon, getQuota, type QuotaStatus } from '@/lib/api-pro';
 import { getSessionToken } from '@/lib/session';
 import { logoutAction } from './actions';
 
@@ -31,14 +32,23 @@ export default async function ProLayout({
   // ce bandeau, le gérant préparerait son agenda en attendant des clients qui
   // ne peuvent pas le trouver — et conclurait que le produit ne marche pas.
   let isPending = false;
+  // Le quota bloque des réservations : le gérant doit le voir depuis
+  // n'importe quel écran, pas seulement en allant le chercher.
+  let quota: QuotaStatus | null = null;
+
   if (token) {
     try {
-      const salon = await getMySalon(token);
+      const [salon, quotaStatus] = await Promise.all([
+        getMySalon(token),
+        getQuota(token),
+      ]);
       isPending = !salon.isActive;
+      quota = quotaStatus;
     } catch {
       // Jeton expiré ou backend injoignable : les pages elles-mêmes
       // redirigeront proprement, inutile de casser le layout ici.
       isPending = false;
+      quota = null;
     }
   }
 
@@ -67,6 +77,7 @@ export default async function ProLayout({
               <NavLink href="/pro/prestations" label={fr.pro.nav.prestations} />
               <NavLink href="/pro/equipe" label={fr.pro.nav.team} />
               <NavLink href="/pro/avis" label={fr.pro.nav.reviews} />
+              <NavLink href="/pro/clients" label={fr.pro.nav.clients} />
               <NavLink href="/pro/statistiques" label={fr.pro.nav.stats} />
               <NavLink
                 href="/pro/indisponibilites"
@@ -88,7 +99,57 @@ export default async function ProLayout({
         </div>
       )}
 
+      {quota && (quota.isExceeded || quota.isNearLimit) && (
+        <QuotaBanner quota={quota} />
+      )}
+
       {children}
+    </div>
+  );
+}
+
+/**
+ * Alerte de quota.
+ *
+ * Deux niveaux volontairement distincts : « bientôt à court » laisse le temps
+ * de réagir, « limite atteinte » signale que des clients sont déjà refusés.
+ * Confondre les deux ferait manquer la fenêtre où le gérant peut encore agir.
+ */
+function QuotaBanner({ quota }: { quota: QuotaStatus }) {
+  const resetDate = formatLongDate(quota.resetsAt.slice(0, 10));
+
+  if (quota.isExceeded) {
+    return (
+      <div className="border-b border-border bg-danger-soft px-4 py-3">
+        <div className="mx-auto max-w-3xl">
+          <p className="font-medium text-danger">
+            {fr.pro.quota.exceededTitle}
+          </p>
+          <p className="mt-1 text-sm">{fr.pro.quota.exceeded}</p>
+          <p className="mt-1 text-sm text-muted">
+            {fr.pro.quota.resets.replace('{date}', resetDate)}{' '}
+            {fr.pro.quota.upgrade}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-b border-border bg-accent-soft px-4 py-3">
+      <div className="mx-auto max-w-3xl">
+        <p className="font-medium text-accent">{fr.pro.quota.nearLimitTitle}</p>
+        <p className="mt-1 text-sm">
+          {fr.pro.quota.nearLimit.replace(
+            '{remaining}',
+            String(quota.remaining ?? 0),
+          )}
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          {fr.pro.quota.resets.replace('{date}', resetDate)}{' '}
+          {fr.pro.quota.upgrade}
+        </p>
+      </div>
     </div>
   );
 }
