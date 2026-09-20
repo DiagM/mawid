@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getClients } from '@/lib/api-pro';
+import { ApiError } from '@/lib/api';
+import { PlanLocked } from '../plan-locked';
 import { fr } from '@/lib/i18n/fr';
 import { formatLongDate, formatPhone, formatPrice } from '@/lib/format';
 import { requireSessionToken } from '@/lib/session';
@@ -14,7 +16,16 @@ export default async function ClientsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const query = params.q?.trim() ?? '';
 
-  const clients = await getClients(token, { query: query || undefined });
+  let clients;
+  try {
+    clients = await getClients(token, { query: query || undefined });
+  } catch (error) {
+    // Module hors offre : on présente ce qu'il apporte plutôt qu'une erreur.
+    if (error instanceof ApiError && error.status === 403) {
+      return <PlanLocked module="clients" />;
+    }
+    throw error;
+  }
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-6">

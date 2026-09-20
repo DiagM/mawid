@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { assertCapability } from '../common/plans';
 import {
   localDayRangeUtc,
   utcToLocalDate,
@@ -39,6 +40,7 @@ export class CashService {
    */
   async findDay(userId: string, date?: string) {
     const salon = await this.getOwnedSalon(userId);
+    assertCapability(salon.plan, 'cash');
     const day = date ?? utcToLocalDate(new Date());
     const { start, end } = localDayRangeUtc(day);
 
@@ -97,6 +99,7 @@ export class CashService {
    */
   async pendingReservations(userId: string, date?: string) {
     const salon = await this.getOwnedSalon(userId);
+    assertCapability(salon.plan, 'cash');
     const day = date ?? utcToLocalDate(new Date());
     const { start, end } = localDayRangeUtc(day);
 
@@ -139,6 +142,7 @@ export class CashService {
 
   async create(userId: string, dto: CreateCashMovementDto) {
     const salon = await this.getOwnedSalon(userId);
+    assertCapability(salon.plan, 'cash');
 
     const occurredAt = dto.occurredAt ? new Date(dto.occurredAt) : new Date();
     if (Number.isNaN(occurredAt.getTime())) {
@@ -201,6 +205,7 @@ export class CashService {
    */
   async remove(userId: string, movementId: string) {
     const salon = await this.getOwnedSalon(userId);
+    assertCapability(salon.plan, 'cash');
 
     const movement = await this.prisma.cashMovement.findUnique({
       where: { id: movementId },
@@ -221,7 +226,7 @@ export class CashService {
   private async getOwnedSalon(userId: string) {
     const salon = await this.prisma.salon.findFirst({
       where: { ownerId: userId },
-      select: { id: true },
+      select: { id: true, plan: true },
     });
 
     if (!salon) {

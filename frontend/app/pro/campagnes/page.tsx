@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getClients, type ClientSegment } from '@/lib/api-pro';
+import { ApiError } from '@/lib/api';
+import { PlanLocked } from '../plan-locked';
 import { fr } from '@/lib/i18n/fr';
 import { requireSessionToken } from '@/lib/session';
 import { CampaignComposer } from './campaign-composer';
@@ -31,7 +33,16 @@ export default async function CampaignsPage({ searchParams }: PageProps) {
     ? (params.segment as ClientSegment)
     : 'lapsed';
 
-  const clients = await getClients(token, { segment });
+  let clients;
+  try {
+    clients = await getClients(token, { segment });
+  } catch (error) {
+    // Module hors offre : on présente ce qu'il apporte plutôt qu'une erreur.
+    if (error instanceof ApiError && error.status === 403) {
+      return <PlanLocked module="clients" />;
+    }
+    throw error;
+  }
   const active = SEGMENTS.find((entry) => entry.value === segment);
 
   return (

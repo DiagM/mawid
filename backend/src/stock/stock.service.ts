@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { assertCapability } from '../common/plans';
 import { utcToLocalDate } from '../common/time/algiers-time';
 import type {
   CreateProductDto,
@@ -30,6 +31,7 @@ export class StockService {
 
   async findMine(userId: string) {
     const salon = await this.getOwnedSalon(userId);
+    assertCapability(salon.plan, 'stock');
 
     const products = await this.prisma.product.findMany({
       where: { salonId: salon.id },
@@ -53,6 +55,7 @@ export class StockService {
 
   async create(userId: string, dto: CreateProductDto) {
     const salon = await this.getOwnedSalon(userId);
+    assertCapability(salon.plan, 'stock');
 
     return this.prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
@@ -182,7 +185,7 @@ export class StockService {
   private async getOwnedSalon(userId: string) {
     const salon = await this.prisma.salon.findFirst({
       where: { ownerId: userId },
-      select: { id: true },
+      select: { id: true, plan: true },
     });
 
     if (!salon) {
@@ -192,10 +195,17 @@ export class StockService {
     return salon;
   }
 
+  /**
+   * Propriété du produit, et offre du salon qui le détient.
+   *
+   * Les deux contrôles vivent ici parce que les trois routes qui visent un
+   * produit précis passent toutes par cette méthode : les séparer aurait tôt
+   * ou tard laissé une route vérifier la propriété sans vérifier l'offre.
+   */
   private async assertOwnership(userId: string, productId: string) {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
-      select: { id: true, salon: { select: { ownerId: true } } },
+      select: { id: true, salon: { select: { ownerId: true, plan: true } } },
     });
 
     if (!product) {
@@ -205,6 +215,8 @@ export class StockService {
     if (product.salon.ownerId !== userId) {
       throw new ForbiddenException("Vous n'avez pas accès à ce produit");
     }
+
+    assertCapability(product.salon.plan, 'stock');
 
     return product;
   }

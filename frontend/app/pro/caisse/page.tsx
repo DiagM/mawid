@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getCashDay, getPendingReservations } from '@/lib/api-pro';
+import { ApiError } from '@/lib/api';
+import { PlanLocked } from '../plan-locked';
 import { fr } from '@/lib/i18n/fr';
 import {
   addDays,
@@ -24,10 +26,20 @@ export default async function CashPage({ searchParams }: PageProps) {
     ? (params.date as string)
     : todayLocalDate();
 
-  const [journal, pending] = await Promise.all([
-    getCashDay(token, day),
-    getPendingReservations(token, day),
-  ]);
+  let journal;
+  let pending;
+  try {
+    [journal, pending] = await Promise.all([
+      getCashDay(token, day),
+      getPendingReservations(token, day),
+    ]);
+  } catch (error) {
+    // Module hors offre : on présente ce qu'il apporte plutôt qu'une erreur.
+    if (error instanceof ApiError && error.status === 403) {
+      return <PlanLocked module="cash" />;
+    }
+    throw error;
+  }
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-6">

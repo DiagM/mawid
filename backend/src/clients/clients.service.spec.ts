@@ -33,7 +33,11 @@ describe('ClientsService', () => {
 
   beforeEach(async () => {
     prisma = {
-      salon: { findFirst: jest.fn().mockResolvedValue({ id: 'salon-a' }) },
+      salon: {
+        findFirst: jest
+          .fn()
+          .mockResolvedValue({ id: 'salon-a', plan: 'PRO_PLUS' }),
+      },
       reservation: { findMany: jest.fn().mockResolvedValue([]) },
     };
 

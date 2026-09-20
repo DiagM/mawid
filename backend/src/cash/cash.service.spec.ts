@@ -46,7 +46,11 @@ describe('CashService', () => {
 
   beforeEach(async () => {
     prisma = {
-      salon: { findFirst: jest.fn().mockResolvedValue({ id: 'salon-a' }) },
+      salon: {
+        findFirst: jest
+          .fn()
+          .mockResolvedValue({ id: 'salon-a', plan: 'PRO_PLUS' }),
+      },
       cashMovement: {
         findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn(),

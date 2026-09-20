@@ -42,7 +42,11 @@ describe('EmployeesService', () => {
     reservationUpdateMany = jest.fn().mockResolvedValue({ count: 0 });
 
     prisma = {
-      salon: { findFirst: jest.fn().mockResolvedValue({ id: SALON_A }) },
+      salon: {
+        findFirst: jest
+          .fn()
+          .mockResolvedValue({ id: SALON_A, plan: 'PRO_PLUS' }),
+      },
       employee: {
         findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn(),

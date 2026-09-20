@@ -168,6 +168,46 @@ export const fr = {
     signIn: 'Se connecter',
     signingIn: 'Connexion…',
     signOut: 'Déconnexion',
+
+    locked: {
+      badge: 'Inclus dans l’offre {plan}',
+      contact:
+        'Contactez Mawid pour passer à l’offre {plan}. Vos données actuelles sont conservées, rien n’est perdu.',
+      navHint: 'Offre {plan}',
+      modules: {
+        clients: {
+          title: 'Votre clientèle',
+          body:
+            'La fiche de chaque cliente se construit toute seule au fil des rendez-vous. Vous voyez qui revient, qui ne revient plus, et vous les relancez sur WhatsApp en quelques minutes.',
+          bullets: [
+            'Historique complet de chaque cliente',
+            'Segment « pas revenues depuis 2 mois »',
+            'Relances WhatsApp, liste de diffusion ou une par une',
+            'Blocage des numéros abusifs',
+          ],
+        },
+        cash: {
+          title: 'La caisse',
+          body:
+            'Vos ventes et vos dépenses du jour, encaissées en un clic depuis l’agenda. De quoi ranger définitivement le cahier tenu à côté.',
+          bullets: [
+            'Ventes et dépenses, espèces, carte ou virement',
+            'Encaissement d’un rendez-vous sans ressaisie',
+            'Solde du jour, y compris les journées négatives',
+          ],
+        },
+        stock: {
+          title: 'Les stocks',
+          body:
+            'Vos produits, leurs quantités et leurs alertes de stock bas. La quantité ne bouge que par un mouvement, donc l’historique reste toujours juste.',
+          bullets: [
+            'Entrées et sorties tracées',
+            'Alerte quand un produit passe sous son seuil',
+            'Prix d’achat et valeur du stock',
+          ],
+        },
+      },
+    },
     discoverMawid: 'Découvrir Mawid pour les salons',
     invalidCredentials: 'Identifiants invalides',
     noAccount: 'Pas encore de compte ?',

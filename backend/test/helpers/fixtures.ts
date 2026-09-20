@@ -67,7 +67,9 @@ export async function createSalon(
       openingHours: ALWAYS_OPEN,
       photos: [],
       isActive: true,
-      plan: options.plan ?? 'PRO',
+      // Pro+ par défaut : un salon de test dispose de TOUS les modules,
+      // sauf quand le scénario porte précisément sur les offres.
+      plan: options.plan ?? 'PRO_PLUS',
       ownerId: user.id,
     },
   });

@@ -4,6 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { capabilitiesFor } from '../common/plans';
+import type { SalonPlan } from '@prisma/client';
 import { localDayRangeUtc, utcToLocalDate } from '../common/time/algiers-time';
 
 /** Fenêtre d'analyse, en instants UTC. */
@@ -53,7 +55,11 @@ export class StatsService {
     // 30 jours par défaut : assez pour lisser les variations d'une semaine,
     // assez court pour que le chiffre reste actionnable.
     const endDate = to ?? today;
-    const startDate = from ?? this.shiftLocalDate(endDate, -29);
+    const startDate = this.clampToPlan(
+      from ?? this.shiftLocalDate(endDate, -29),
+      salon.plan,
+      today,
+    );
 
     const current = this.toPeriod(startDate, endDate);
     const previous = this.previousPeriod(current);
@@ -80,6 +86,36 @@ export class StatsService {
   // ============================================
   // Calculs
   // ============================================
+
+  /**
+   * Ramène la date de début dans la profondeur d'historique de l'offre.
+   *
+   * On **tronque** plutôt que de refuser : un gérant Gratuit qui demande
+   * trois mois reçoit le mois en cours, pas une erreur. Une statistique
+   * partielle reste lisible ; un écran qui refuse de s'afficher ne vend
+   * rien et donne l'impression d'une panne.
+   *
+   * Le premier jour autorisé est celui du mois en cours pour `statsMonths`
+   * à 1 — « le mois en cours », et non « les 30 derniers jours », parce que
+   * c'est ainsi qu'un gérant raisonne sur son chiffre.
+   */
+  private clampToPlan(
+    startDate: string,
+    plan: SalonPlan,
+    today: string,
+  ): string {
+    const months = capabilitiesFor(plan).statsMonths;
+    if (months === null) {
+      return startDate;
+    }
+
+    const [year, month] = today.split('-').map(Number);
+    // `months - 1` : 1 mois autorisé = le mois en cours uniquement.
+    const firstAllowed = new Date(Date.UTC(year, month - 1 - (months - 1), 1));
+    const floor = firstAllowed.toISOString().slice(0, 10);
+
+    return startDate < floor ? floor : startDate;
+  }
 
   private async statsFor(
     salonId: string,
@@ -319,7 +355,7 @@ export class StatsService {
   private async getOwnedSalon(userId: string) {
     const salon = await this.prisma.salon.findFirst({
       where: { ownerId: userId },
-      select: { id: true },
+      select: { id: true, plan: true },
     });
 
     if (!salon) {

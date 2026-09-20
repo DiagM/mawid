@@ -4,6 +4,7 @@ import { fr } from '@/lib/i18n/fr';
 import { formatLongDate } from '@/lib/format';
 import { getMySalon, getQuota, type QuotaStatus } from '@/lib/api-pro';
 import { getSessionToken } from '@/lib/session';
+import { hasModule, PLAN_LABELS, REQUIRED_PLAN } from '@/lib/plans';
 import { logoutAction } from './actions';
 
 export const metadata: Metadata = {
@@ -52,6 +53,19 @@ export default async function ProLayout({
     }
   }
 
+  // `quota` porte déjà l'offre du salon : pas de requête supplémentaire.
+  // Sans session ou backend injoignable, on n'affiche aucun verrou plutôt
+  // que d'en inventer un.
+  const plan = quota?.plan ?? null;
+  const clientsLock =
+    plan && !hasModule(plan, 'clients')
+      ? PLAN_LABELS[REQUIRED_PLAN.clients]
+      : null;
+  const cashLock =
+    plan && !hasModule(plan, 'cash') ? PLAN_LABELS[REQUIRED_PLAN.cash] : null;
+  const stockLock =
+    plan && !hasModule(plan, 'stock') ? PLAN_LABELS[REQUIRED_PLAN.stock] : null;
+
   return (
     <div className="flex min-h-full flex-col">
       {hasSession && (
@@ -77,10 +91,30 @@ export default async function ProLayout({
               <NavLink href="/pro/prestations" label={fr.pro.nav.prestations} />
               <NavLink href="/pro/equipe" label={fr.pro.nav.team} />
               <NavLink href="/pro/avis" label={fr.pro.nav.reviews} />
-              <NavLink href="/pro/clients" label={fr.pro.nav.clients} />
-              <NavLink href="/pro/campagnes" label={fr.pro.nav.campaigns} />
-              <NavLink href="/pro/caisse" label={fr.pro.nav.cash} />
-              <NavLink href="/pro/stock" label={fr.pro.nav.stock} />
+              {/* Les modules hors offre restent VISIBLES, marqués de l'offre
+                  qui les débloque. Les masquer priverait le gérant de toute
+                  raison de monter en gamme — il ignorerait jusqu'à leur
+                  existence. */}
+              <NavLink
+                href="/pro/clients"
+                label={fr.pro.nav.clients}
+                lockedBy={clientsLock}
+              />
+              <NavLink
+                href="/pro/campagnes"
+                label={fr.pro.nav.campaigns}
+                lockedBy={clientsLock}
+              />
+              <NavLink
+                href="/pro/caisse"
+                label={fr.pro.nav.cash}
+                lockedBy={cashLock}
+              />
+              <NavLink
+                href="/pro/stock"
+                label={fr.pro.nav.stock}
+                lockedBy={stockLock}
+              />
               <NavLink href="/pro/statistiques" label={fr.pro.nav.stats} />
               <NavLink
                 href="/pro/indisponibilites"
@@ -157,14 +191,30 @@ function QuotaBanner({ quota }: { quota: QuotaStatus }) {
   );
 }
 
-function NavLink({ href, label }: { href: string; label: string }) {
+function NavLink({
+  href,
+  label,
+  lockedBy = null,
+}: {
+  href: string;
+  label: string;
+  /** Nom de l'offre qui débloque ce module, ou `null` s'il est ouvert. */
+  lockedBy?: string | null;
+}) {
   return (
     <li>
       <Link
         href={href}
-        className="block shrink-0 rounded-lg px-3 py-2 text-sm font-medium text-muted hover:bg-accent-soft hover:text-accent"
+        className={`block shrink-0 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent-soft hover:text-accent ${
+          lockedBy ? 'text-muted/60' : 'text-muted'
+        }`}
       >
         {label}
+        {lockedBy && (
+          <span className="ml-1.5 rounded-full border border-border px-1.5 py-0.5 text-[10px] font-normal">
+            {lockedBy}
+          </span>
+        )}
       </Link>
     </li>
   );

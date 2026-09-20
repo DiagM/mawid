@@ -8,6 +8,7 @@ import {
 // c'est lui qui distingue « colonne NULL » d'une valeur JSON `null`.
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { assertEmployeeQuota } from '../common/plans';
 import { CreateEmployeeDto, UpdateEmployeeDto } from './dto/employee.dto';
 
 @Injectable()
@@ -47,6 +48,15 @@ export class EmployeesService {
       where: { salonId: salon.id },
     });
 
+    // Le plafond porte sur les membres ACTIFS : archiver quelqu'un doit
+    // libérer une place, sinon un salon qui change d'employé resterait
+    // bloqué à vie. `existingCount` compte aussi les archivés, il sert au
+    // seul `displayOrder` et ne convient pas ici.
+    const activeCount = await this.prisma.employee.count({
+      where: { salonId: salon.id, isActive: true },
+    });
+    assertEmployeeQuota(salon.plan, activeCount);
+
     return this.prisma.$transaction(async (tx) => {
       const employee = await tx.employee.create({
         data: {
@@ -78,6 +88,17 @@ export class EmployeesService {
 
   async update(userId: string, employeeId: string, dto: UpdateEmployeeDto) {
     const employee = await this.assertOwnership(userId, employeeId);
+
+    // Réactiver un membre archivé revient à en ajouter un : sans ce contrôle,
+    // un salon Gratuit contournerait son plafond en archivant puis
+    // restaurant à volonté.
+    if (dto.isActive === true && !employee.isActive) {
+      const salon = await this.getOwnedSalon(userId);
+      const activeCount = await this.prisma.employee.count({
+        where: { salonId: salon.id, isActive: true },
+      });
+      assertEmployeeQuota(salon.plan, activeCount);
+    }
 
     const data: Prisma.EmployeeUpdateInput = {
       ...(dto.fullName !== undefined && { fullName: dto.fullName }),
@@ -135,7 +156,7 @@ export class EmployeesService {
   private async getOwnedSalon(userId: string) {
     const salon = await this.prisma.salon.findFirst({
       where: { ownerId: userId },
-      select: { id: true },
+      select: { id: true, plan: true },
     });
 
     if (!salon) {
@@ -148,7 +169,11 @@ export class EmployeesService {
   private async assertOwnership(userId: string, employeeId: string) {
     const employee = await this.prisma.employee.findUnique({
       where: { id: employeeId },
-      select: { id: true, salon: { select: { ownerId: true } } },
+      select: {
+        id: true,
+        isActive: true,
+        salon: { select: { ownerId: true, plan: true } },
+      },
     });
 
     if (!employee) {

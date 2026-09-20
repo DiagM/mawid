@@ -471,6 +471,45 @@ La page n'annonce donc que ce qui est vrai — Gratuit (30 RDV/mois) et Pro
 pas** : à 5 500 DZD, il n'aurait aujourd'hui rien de plus que Pro. Le
 vendre supposerait d'implémenter d'abord le conditionnement par offre.
 
+**Lot 12 — Conditionnement par offre.** ✅ Livré le 2026-09-20.
+
+Jusqu'ici `plan` ne pilotait **que** le quota mensuel : un salon Gratuit
+disposait de la caisse, des stocks, des statistiques et du multi-employés.
+La grille du business plan §8.1 n'était donc vendable sur aucun point.
+
+| | Gratuit | Pro | Pro+ |
+|---|---|---|---|
+| Réservations / mois | 30 | ∞ | ∞ |
+| Membres d'équipe actifs | 1 | ∞ | ∞ |
+| Fiches clientes et relances | — | ✓ | ✓ |
+| Statistiques | Mois en cours | Complètes | Complètes |
+| Caisse et stocks | — | — | ✓ |
+
+**La règle qui a guidé le découpage** : ne jamais dégrader l'expérience de
+la cliente. Le quota mensuel le fait déjà et reste la seule exception
+assumée du produit ; aucun verrou de module ne s'y ajoute. Un test E2E
+vérifie qu'un salon Gratuit se réserve, s'annule et se note à l'identique.
+
+**Déclassement.** Un verrou empêche d'AJOUTER, jamais d'accéder à
+l'existant : un salon qui repasse en Gratuit garde ses trois membres actifs
+et son historique de caisse en base. Réactiver un membre archivé compte
+comme un ajout — sinon archiver puis restaurer serait une faille.
+
+**Statistiques tronquées, pas refusées.** Un gérant Gratuit qui demande
+trois mois reçoit le mois en cours. Une statistique partielle reste
+lisible ; un écran qui refuse de s'afficher donne l'impression d'une panne.
+
+**Les modules verrouillés restent visibles** dans la navigation, marqués de
+l'offre qui les débloque, et mènent à un écran qui explique ce qu'ils
+apportent. Les masquer priverait le gérant de toute raison de monter en
+gamme — il ignorerait jusqu'à leur existence.
+
+**Duplication assumée** : `frontend/lib/plans.ts` reflète
+`backend/src/common/plans.ts`. Le frontend doit décider quoi verrouiller
+avant d'appeler l'API, et exposer la carte par une route ajouterait un
+aller-retour par écran pour une valeur qui change une fois par an. Le
+backend refait le contrôle et fait foi.
+
 ## 6. Hors périmètre, quelle que soit la version
 
 - Application mobile native — le business plan lui-même tranche : « PWA

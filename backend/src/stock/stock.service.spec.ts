@@ -42,13 +42,17 @@ describe('StockService', () => {
     movementCreate = jest.fn().mockResolvedValue({ id: 'mov-1' });
 
     prisma = {
-      salon: { findFirst: jest.fn().mockResolvedValue({ id: 'salon-a' }) },
+      salon: {
+        findFirst: jest
+          .fn()
+          .mockResolvedValue({ id: 'salon-a', plan: 'PRO_PLUS' }),
+      },
       product: {
         findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn().mockResolvedValue({
           id: 'prod-1',
           quantity: 10,
-          salon: { ownerId: 'user-a' },
+          salon: { ownerId: 'user-a', plan: 'PRO_PLUS' },
         }),
         create: productCreate,
         update: productUpdate,
@@ -220,7 +224,7 @@ describe('StockService', () => {
       prisma.product.findUnique.mockResolvedValue({
         id: 'prod-b',
         quantity: 5,
-        salon: { ownerId: 'user-b' },
+        salon: { ownerId: 'user-b', plan: 'PRO_PLUS' },
       });
 
       await expect(

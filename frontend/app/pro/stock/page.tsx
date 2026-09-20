@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { getProducts } from '@/lib/api-pro';
+import { ApiError } from '@/lib/api';
+import { PlanLocked } from '../plan-locked';
 import { fr } from '@/lib/i18n/fr';
 import { requireSessionToken } from '@/lib/session';
 import { StockManager } from './stock-manager';
@@ -8,7 +10,16 @@ export const metadata: Metadata = { title: fr.pro.stock.title };
 
 export default async function StockPage() {
   const token = await requireSessionToken();
-  const products = await getProducts(token);
+  let products;
+  try {
+    products = await getProducts(token);
+  } catch (error) {
+    // Module hors offre : on présente ce qu'il apporte plutôt qu'une erreur.
+    if (error instanceof ApiError && error.status === 403) {
+      return <PlanLocked module="stock" />;
+    }
+    throw error;
+  }
 
   const lowStock = products.filter((product) => product.isLowStock).length;
 

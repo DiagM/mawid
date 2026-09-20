@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { assertCapability } from '../common/plans';
 import { utcToLocalDate } from '../common/time/algiers-time';
 import type { ClientSegment } from './dto/clients-query.dto';
 
@@ -38,6 +39,7 @@ export class ClientsService {
     lapsedDays = 60,
   ) {
     const salon = await this.getOwnedSalon(userId);
+    assertCapability(salon.plan, 'clients');
     const search = query?.trim();
 
     const reservations = await this.prisma.reservation.findMany({
@@ -185,6 +187,7 @@ export class ClientsService {
    */
   async findOne(userId: string, clientId: string) {
     const salon = await this.getOwnedSalon(userId);
+    assertCapability(salon.plan, 'clients');
 
     const reservations = await this.prisma.reservation.findMany({
       where: { salonId: salon.id, clientId },
@@ -235,7 +238,7 @@ export class ClientsService {
   private async getOwnedSalon(userId: string) {
     const salon = await this.prisma.salon.findFirst({
       where: { ownerId: userId },
-      select: { id: true },
+      select: { id: true, plan: true },
     });
 
     if (!salon) {
