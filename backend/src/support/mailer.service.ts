@@ -18,8 +18,8 @@ import { Injectable, Logger } from '@nestjs/common';
 export class MailerService {
   private readonly logger = new Logger(MailerService.name);
 
-  private readonly apiKey = process.env.RESEND_API_KEY ?? '';
-  private readonly to = process.env.MAWID_CONTACT_EMAIL ?? '';
+  private readonly apiKey = readEnv('RESEND_API_KEY');
+  private readonly to = readEnv('MAWID_CONTACT_EMAIL');
 
   /**
    * Expéditeur. `onboarding@resend.dev` fonctionne sans vérifier de domaine,
@@ -28,7 +28,7 @@ export class MailerService {
    * finiront en indésirables.
    */
   private readonly from =
-    process.env.MAWID_MAIL_FROM ?? 'Mawid <onboarding@resend.dev>';
+    readEnv('MAWID_MAIL_FROM') || 'Mawid <onboarding@resend.dev>';
 
   get isConfigured(): boolean {
     return Boolean(this.apiKey && this.to);
@@ -73,4 +73,17 @@ export class MailerService {
       );
     }
   }
+}
+
+/**
+ * Variable d'environnement, une valeur vide comptant pour absente.
+ *
+ * `process.env.X ?? 'defaut'` ne rattrape PAS une chaîne vide : une variable
+ * déclarée sans valeur — ce que produit un fichier `.env` recopié depuis un
+ * exemple, ou un champ laissé vide dans un tableau de bord — écraserait le
+ * repli. Ici cela aurait donné un expéditeur vide, donc chaque envoi refusé
+ * par Resend, et pour seul signal un avertissement dans les journaux.
+ */
+function readEnv(name: string): string {
+  return process.env[name]?.trim() ?? '';
 }

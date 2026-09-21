@@ -76,5 +76,7 @@ services:
         sync: false
       - key: MAWID_CONTACT_EMAIL
         sync: false
-      - key: MAWID_MAIL_FROM
-        sync: false
+      # MAWID_MAIL_FROM est volontairement ABSENTE. Le defaut du code,
+      # « Mawid <onboarding@resend.dev> », fonctionne sans domaine verifie ;
+      # une adresse de domaine non verifie ferait refuser chaque envoi. A
+      # ajouter au tableau de bord une fois mawid.dz verifie chez Resend.
