@@ -25,11 +25,17 @@ jobs:
     name: pg_dump
     runs-on: ubuntu-latest
 
-    # `pg_dump` doit avoir la MÊME version majeure que le serveur, sinon il
-    # refuse de tourner. Passer par l'image officielle garantit cet accord,
-    # là où le paquet préinstallé du runner peut changer sans prévenir.
+    # `pg_dump` refuse de sauvegarder un serveur PLUS RÉCENT que lui. La règle
+    # est donc : version de l'image >= version du serveur Neon. Passer par
+    # l'image officielle fige cet accord, là où le paquet préinstallé du
+    # runner peut changer sans prévenir.
+    #
+    # Neon est en PostgreSQL 18.6 au 21/09/2026. Le jour où Neon passera la
+    # base en 19, ce job échouera sur « aborting because of server version
+    # mismatch » : il suffira alors de monter ce tag. L'échec est bruyant et
+    # GitHub envoie un courriel, donc la panne ne passera pas inaperçue.
     container:
-      image: postgres:16-alpine
+      image: postgres:18-alpine
 
     steps:
       - name: Sauvegarder
