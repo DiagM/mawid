@@ -3,6 +3,7 @@ import { searchSalons, type SalonSearchResult } from '@/lib/api';
 import { fr } from '@/lib/i18n/fr';
 import { formatPrice } from '@/lib/format';
 import { RatingBadge } from '@/components/stars';
+import { Logo } from '@/components/logo';
 
 type PageProps = {
   searchParams: Promise<{ q?: string; womenOnly?: string }>;
@@ -35,11 +36,11 @@ export default async function HomePage({ searchParams }: PageProps) {
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-8">
-      <header className="mb-8 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight text-accent">
-          {fr.app.name}
+      <header className="mb-8 flex flex-col items-center text-center">
+        <h1>
+          <Logo size="lg" />
         </h1>
-        <p className="mt-2 text-muted">{fr.app.tagline}</p>
+        <p className="mt-3 text-muted">{fr.app.tagline}</p>
       </header>
 
       <form method="get" className="mb-8">

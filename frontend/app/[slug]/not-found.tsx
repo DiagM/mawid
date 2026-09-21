@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { fr } from '@/lib/i18n/fr';
+import { Logo } from '@/components/logo';
 
 export default function SalonNotFound() {
   return (
@@ -10,7 +11,7 @@ export default function SalonNotFound() {
         href="/"
         className="mt-6 inline-flex h-11 items-center justify-center rounded-xl border border-border bg-surface px-5 font-medium"
       >
-        {fr.app.name}
+        <Logo size="sm" />
       </Link>
     </main>
   );

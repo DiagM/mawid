@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fr } from '@/lib/i18n/fr';
+import { Logo } from '@/components/logo';
 import { formatLongDate } from '@/lib/format';
 import { getMySalon, getQuota, type QuotaStatus } from '@/lib/api-pro';
 import { getSessionToken } from '@/lib/session';
@@ -71,8 +72,8 @@ export default async function ProLayout({
       {hasSession && (
         <header className="border-b border-border bg-surface">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-3">
-            <Link href="/pro" className="font-semibold text-accent">
-              {fr.app.name}
+            <Link href="/pro">
+              <Logo size="sm" />
             </Link>
             <form action={logoutAction}>
               <button

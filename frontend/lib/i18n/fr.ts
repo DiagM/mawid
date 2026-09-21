@@ -14,6 +14,7 @@ export const fr = {
   app: {
     name: 'Mawid',
     tagline: 'Ton rendez-vous beauté, en 60 secondes.',
+    logoTagline: 'Beauté · Alger',
   },
 
   common: {

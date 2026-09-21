@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Logo } from '@/components/logo';
 import { notFound } from 'next/navigation';
 import {
   ApiError,
@@ -85,6 +86,13 @@ export default async function SalonPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-24 pt-6">
+      {/* Un visiteur arrive ici depuis Google, jamais par l'accueil : sans
+          ce lien il n'a aucun moyen de découvrir les autres salons, ni même
+          de comprendre sur quelle plateforme il se trouve. */}
+      <Link href="/" className="mb-6 inline-block">
+        <Logo size="sm" />
+      </Link>
+
       {/*
         Données structurées : c'est ce qui fait remonter adresse, horaires et
         fourchette de prix dans les résultats Google. Pour un salon sans site
@@ -163,7 +171,7 @@ export default async function SalonPage({ params }: PageProps) {
       )}
 
       <section aria-labelledby="prestations" className="mb-8">
-        <h2 id="prestations" className="mb-3 text-lg font-semibold">
+        <h2 id="prestations" className="mb-3 text-lg font-semibold rule-gold">
           {fr.salon.services}
         </h2>
 
@@ -199,7 +207,7 @@ export default async function SalonPage({ params }: PageProps) {
       </section>
 
       <section aria-labelledby="horaires" className="mb-8">
-        <h2 id="horaires" className="mb-3 text-lg font-semibold">
+        <h2 id="horaires" className="mb-3 text-lg font-semibold rule-gold">
           {fr.salon.openingHours}
         </h2>
         <dl className="overflow-hidden rounded-xl border border-border bg-surface">

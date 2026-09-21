@@ -1,19 +1,37 @@
 @import "tailwindcss";
 
 /**
- * Palette : un vert profond (confiance, proche des codes des salons
- * algériens) sur fond crème plutôt que blanc pur, plus doux en plein soleil
- * sur un écran de téléphone — le contexte d'usage réel du produit.
+ * ============================================
+ * Identité visuelle
+ * ============================================
+ * Terre cuite et crème, avec un or discret. Trois raisons :
+ *
+ * 1. **Le secteur se vend à l'œil.** Une interface neutre et grise ne dit
+ *    rien d'un salon de beauté ; ces teintes évoquent le soin et la chaleur
+ *    sans tomber dans le rose, qui ferait fuir les barbershops — or ce sont
+ *    eux la cible d'amorçage du business plan.
+ * 2. **C'est méditerranéen et algérien**, pas un thème générique importé.
+ * 3. **Le fond crème plutôt que blanc pur** reste plus doux en plein soleil
+ *    sur un écran de téléphone, le contexte d'usage réel du produit.
  */
 :root {
-  --background: #fbf9f6;
+  --background: #fdf8f3;
   --surface: #ffffff;
-  --foreground: #1c1a17;
-  --muted: #6b6560;
-  --border: #e7e1d9;
-  --accent: #1f6f5c;
-  --accent-hover: #175447;
-  --accent-soft: #e8f2ef;
+  --foreground: #2a1f1a;
+  --muted: #7a6a5f;
+  --border: #ece0d5;
+
+  /* Terre cuite. Assombrie jusqu'à ~5:1 sur le fond : un accent qui sert
+     aussi de fond de bouton doit rester lisible en blanc dessus. */
+  --accent: #a84b28;
+  --accent-hover: #8a3c1f;
+  --accent-soft: #fbeae2;
+
+  /* Or : ornements et séparateurs uniquement. Jamais du texte — son
+     contraste sur fond clair est insuffisant. */
+  --gold: #c8a04a;
+  --gold-soft: #f6edd9;
+
   --danger: #b3261e;
   --danger-soft: #fdeceb;
 }
@@ -27,14 +45,21 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-soft: var(--accent-soft);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+
+  --font-display: var(--font-marcellus), Georgia, "Times New Roman", serif;
+  --font-arabic: var(--font-aref-ruqaa), serif;
 }
 
 /*
- * Police système : aucune requête vers Google Fonts. Un appel réseau de moins
- * au build comme au chargement, ce qui compte sur une connexion mobile
- * algérienne — et une dépendance externe de moins.
+ * Corps de texte en police système : aucune requête réseau, et c'est ce qui
+ * se lit le mieux en petit sur un téléphone d'entrée de gamme. Les polices
+ * chargées (titres, logo) le sont par `next/font`, donc téléchargées au
+ * build et servies depuis notre propre domaine — la décision d'origine de
+ * ne dépendre d'aucun tiers au chargement tient toujours.
  */
 body {
   background: var(--background);
@@ -44,10 +69,38 @@ body {
     "Noto Sans", sans-serif;
 }
 
+/*
+ * Titres en serif : c'est le signal le plus économique pour dire « soin » et
+ * « élégance ». Un changement de police sur les titres transforme la
+ * perception d'une page sans toucher à sa structure.
+ */
+h1,
+h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
 /* Cibles tactiles confortables : le produit est utilisé au pouce, debout. */
 @media (pointer: coarse) {
   button,
   a[role="button"] {
     min-height: 44px;
   }
+}
+
+/**
+ * Filet doré, pour souligner un titre de section sans ajouter d'image.
+ * Utilisé avec parcimonie : répété partout, l'ornement cesse d'orner.
+ */
+.rule-gold::after {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 2px;
+  margin-top: 0.5rem;
+  background: linear-gradient(
+    to right,
+    var(--gold),
+    color-mix(in srgb, var(--gold) 20%, transparent)
+  );
 }

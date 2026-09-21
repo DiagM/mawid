@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { fr } from '@/lib/i18n/fr';
+import { Logo } from '@/components/logo';
 import { getSessionToken } from '@/lib/session';
 import { LoginForm } from './login-form';
 
@@ -19,8 +20,8 @@ export default async function LoginPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-12">
-      <h1 className="text-2xl font-semibold tracking-tight text-accent">
-        {fr.app.name}
+      <h1 className="mb-1">
+        <Logo size="md" />
       </h1>
       <p className="mb-8 mt-1 text-muted">{fr.pro.loginSubtitle}</p>
 

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fr } from '@/lib/i18n/fr';
+import { Logo } from '@/components/logo';
 import { siteUrl } from '@/lib/site-url';
 
 /**
@@ -38,11 +39,8 @@ export default function ForSalonsPage() {
       {/* ---- Accroche ---- */}
       <section className="border-b border-border bg-surface">
         <div className="mx-auto w-full max-w-3xl px-4 py-14 text-center">
-          <Link
-            href="/"
-            className="text-sm font-semibold text-accent underline underline-offset-4"
-          >
-            {fr.app.name}
+          <Link href="/" className="inline-block">
+            <Logo size="md" />
           </Link>
 
           <h1 className="mt-6 text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -73,7 +71,7 @@ export default function ForSalonsPage() {
 
       {/* ---- Bénéfices ---- */}
       <section className="mx-auto w-full max-w-3xl px-4 py-12">
-        <h2 className="mb-6 text-xl font-semibold">
+        <h2 className="mb-6 text-xl font-semibold rule-gold">
           {fr.landing.problemTitle}
         </h2>
 
@@ -93,7 +91,7 @@ export default function ForSalonsPage() {
       {/* ---- Fonctionnalités ---- */}
       <section className="border-y border-border bg-surface">
         <div className="mx-auto w-full max-w-3xl px-4 py-12">
-          <h2 className="mb-6 text-xl font-semibold">
+          <h2 className="mb-6 text-xl font-semibold rule-gold">
             {fr.landing.featuresTitle}
           </h2>
 
@@ -110,7 +108,7 @@ export default function ForSalonsPage() {
 
       {/* ---- Tarifs ---- */}
       <section className="mx-auto w-full max-w-3xl px-4 py-12">
-        <h2 className="mb-2 text-xl font-semibold">
+        <h2 className="mb-2 text-xl font-semibold rule-gold">
           {fr.landing.pricingTitle}
         </h2>
         <p className="mb-6 text-sm text-muted">{fr.landing.pricingNote}</p>
@@ -160,7 +158,7 @@ export default function ForSalonsPage() {
       {/* ---- Démarrage ---- */}
       <section className="border-y border-border bg-surface">
         <div className="mx-auto w-full max-w-3xl px-4 py-12">
-          <h2 className="mb-6 text-xl font-semibold">
+          <h2 className="mb-6 text-xl font-semibold rule-gold">
             {fr.landing.stepsTitle}
           </h2>
 
@@ -182,7 +180,7 @@ export default function ForSalonsPage() {
 
       {/* ---- Questions ---- */}
       <section className="mx-auto w-full max-w-3xl px-4 py-12">
-        <h2 className="mb-6 text-xl font-semibold">{fr.landing.faqTitle}</h2>
+        <h2 className="mb-6 text-xl font-semibold rule-gold">{fr.landing.faqTitle}</h2>
 
         <div className="space-y-3">
           {fr.landing.faq.map((entry) => (

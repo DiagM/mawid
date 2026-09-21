@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fr } from '@/lib/i18n/fr';
+import { Logo } from '@/components/logo';
 import { requireAdminToken } from '@/lib/session';
 import { logoutAction } from '../pro/actions';
 
@@ -37,8 +38,11 @@ export default async function AdminLayout({
     <div className="flex min-h-full flex-col">
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <Link href="/admin" className="font-semibold text-accent">
-            {fr.admin.title}
+          <Link href="/admin" className="flex items-center gap-2">
+            <Logo size="sm" withWordmark={false} />
+            <span className="font-display text-sm tracking-wide">
+              {fr.admin.title}
+            </span>
           </Link>
 
           <nav className="flex flex-wrap items-center gap-1 text-sm">
