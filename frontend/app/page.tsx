@@ -96,7 +96,21 @@ export default async function HomePage({ searchParams }: PageProps) {
                   className="block rounded-xl border border-border bg-surface p-4 transition-colors hover:border-accent"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div>
+                    {/* Vignette : `photos[0]`, celle que le gérant a choisie
+                        comme vitrine. Une liste de résultats sans image se
+                        parcourt beaucoup moins dans un secteur qui se vend à
+                        l'œil. */}
+                    {salon.photo && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={salon.photo}
+                        alt=""
+                        loading="lazy"
+                        className="size-20 shrink-0 rounded-lg border border-border object-cover"
+                      />
+                    )}
+
+                    <div className="min-w-0 flex-1">
                       {/*
                         La mise en avant est annoncée explicitement : un
                         classement payant non signalé tromperait le client sur

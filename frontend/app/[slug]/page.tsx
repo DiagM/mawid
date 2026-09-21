@@ -132,6 +132,36 @@ export default async function SalonPage({ params }: PageProps) {
         </a>
       </header>
 
+      {salon.photos.length > 0 && (
+        <section aria-label={fr.salon.photos} className="mb-8">
+          {/* Bande défilante plutôt qu'une grille : sur téléphone — d'où
+              vient la quasi-totalité du trafic — une grille rétrécirait
+              chaque photo au point de ne plus rien montrer. */}
+          <ul className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">
+            {salon.photos.map((photo, index) => (
+              <li
+                key={photo}
+                className="w-64 shrink-0 snap-start overflow-hidden rounded-xl border border-border"
+              >
+                {/* `img` et non `next/image` : ces URL viennent d'un
+                    hébergeur externe et l'optimiseur de Next les ferait
+                    toutes transiter par le serveur. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photo}
+                  alt=""
+                  // La première est visible d'emblée, les suivantes non :
+                  // les charger toutes ralentirait l'affichage du prix et
+                  // des créneaux, qui sont la vraie raison de la visite.
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  className="aspect-[4/3] w-full object-cover"
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section aria-labelledby="prestations" className="mb-8">
         <h2 id="prestations" className="mb-3 text-lg font-semibold">
           {fr.salon.services}

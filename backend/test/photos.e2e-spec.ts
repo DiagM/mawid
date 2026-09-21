@@ -194,8 +194,16 @@ describe('Photos de salon (e2e)', () => {
     });
   });
 
-  describe('affichage public', () => {
-    it('expose les photos sur la fiche et en recherche', async () => {
+  /**
+   * ⚠️ Ces tests couvrent l'API, pas le rendu des pages.
+   *
+   * La distinction a coûté cher : ils passaient au vert alors que ni la
+   * fiche publique ni les résultats de recherche n'affichaient la moindre
+   * photo. Le projet n'a pas de tests de rendu ; c'est une vérification qui
+   * reste manuelle.
+   */
+  describe('les photos sortent bien de l’API publique', () => {
+    it('sur la fiche salon et dans les résultats de recherche', async () => {
       await seedPhotos([PHOTO(1), PHOTO(2)]);
 
       const page = await request(server)

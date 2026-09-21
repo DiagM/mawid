@@ -41,6 +41,7 @@ export const fr = {
   },
 
   salon: {
+    photos: 'Photos du salon',
     closed: 'Fermé',
     openingHours: "Horaires d'ouverture",
     services: 'Prestations',
