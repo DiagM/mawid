@@ -116,17 +116,52 @@ point de friction réel depuis l'Algérie.
 
 ### 4.2 Variables à positionner
 
+Les fichiers `render.yaml` et `netlify.toml` à la racine décrivent les deux
+services. Tout ce qui est marqué `sync: false` se saisit dans le tableau de
+bord de l'hébergeur et ne transite jamais par le dépôt.
+
 ```bash
 # Backend (Render)
-DATABASE_URL=<chaîne Neon, avec ?sslmode=require>
-JWT_SECRET=<32+ octets aléatoires, JAMAIS celui de docker-compose.yml>
+DATABASE_URL=<chaîne Neon DIRECTE, sans -pooler, avec ?sslmode=require>
+JWT_SECRET=<généré par Render, JAMAIS celui de docker-compose.yml>
 FRONTEND_ORIGINS=https://mawid.netlify.app
 TRUST_PROXY_HOPS=1          # Render termine le TLS et ajoute X-Forwarded-For
 NODE_ENV=production
 
+# Photos (docs/MVP_SCOPE.md, lot 15). Absentes : téléversement désactivé,
+# le reste du produit fonctionne.
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# Notification des demandes (lot 16). Absentes : les demandes restent
+# consultables dans /admin/demandes, aucun e-mail ne part.
+RESEND_API_KEY=
+MAWID_CONTACT_EMAIL=
+MAWID_MAIL_FROM=Mawid <contact@mawid.dz>   # après vérification du domaine
+
 # Frontend (Netlify)
 NEXT_PUBLIC_API_URL=https://mawid-api.onrender.com/api
+NEXT_PUBLIC_SITE_URL=https://mawid.netlify.app
 ```
+
+**Chaîne Neon : prendre la DIRECTE, pas la « pooled ».** `prisma migrate`
+s'appuie sur des verrous consultatifs que le pooler de Neon ne conserve pas,
+et le backend gère déjà son propre pool — en empiler deux n'apporte rien.
+
+**`NEXT_PUBLIC_SITE_URL` n'est pas décorative** : sans elle, les liens de
+gestion glissés dans les rappels WhatsApp, le sitemap et les métadonnées
+Open Graph pointeraient tous vers `localhost`.
+
+**Ne pas positionner `BACKEND_INTERNAL_URL` sur Netlify.** En développement
+elle désigne le réseau Docker interne ; sur Netlify ce réseau n'existe pas,
+et `lib/api.ts` retombe correctement sur `NEXT_PUBLIC_API_URL`. La
+renseigner ferait pointer le rendu serveur vers un hôte injoignable.
+
+**Les migrations sont appliquées par Render au démarrage**
+(`prisma migrate deploy` dans `startCommand`), pas depuis un poste de
+développement : l'URL de production ne touche jamais une machine
+personnelle, et un redéploiement suffit à mettre le schéma à jour.
 
 `TRUST_PROXY_HOPS=1` est **la valeur exacte pour cette topologie**, et elle
 n'est pas anodine : à 0, tous les clients partagent l'IP de Render et se
@@ -136,9 +171,30 @@ Cloudflare est ajouté devant l'API plus tard, la valeur passe à 2.
 
 ### 4.3 Sauvegardes
 
-`pg_dump` quotidien via GitHub Actions (cron), archivé en artefact de build —
-gratuit et suffisant à cette échelle. **Une restauration doit être testée une
-fois** : une sauvegarde jamais restaurée n'est pas une sauvegarde.
+`pg_dump` quotidien via `.github/workflows/backup.yml` (02h00 UTC, soit
+03h00 à Alger), archivé en artefact pendant 30 jours. Le job tourne dans
+l'image `postgres:16-alpine` : `pg_dump` refuse de fonctionner si sa version
+majeure diffère de celle du serveur, et le paquet préinstallé du runner peut
+changer sans prévenir.
+
+**Un secret de dépôt `DATABASE_URL` est nécessaire** (Settings → Secrets and
+variables → Actions). Sans lui, le job échoue franchement plutôt que de
+produire une sauvegarde vide.
+
+**Une restauration doit être testée une fois** : une sauvegarde jamais
+restaurée n'est pas une sauvegarde. L'exercice, sur une branche Neon jetable
+pour ne pas toucher la production :
+
+```bash
+# 1. Télécharger l'artefact depuis l'onglet Actions du dépôt
+# 2. Créer une branche Neon de test, récupérer sa chaîne de connexion
+pg_restore --no-owner --no-acl --dbname="<url-de-la-branche-de-test>" mawid-AAAA-MM-JJ.dump
+
+# 3. Vérifier que l'essentiel est là — et surtout les extensions, sans
+#    lesquelles la contrainte anti-double-réservation ne se recrée pas
+psql "<url>" -c "SELECT extname FROM pg_extension WHERE extname IN ('btree_gist','unaccent');"
+psql "<url>" -c "SELECT count(*) FROM reservations;"
+```
 
 ### 4.4 Réserves honnêtes
 

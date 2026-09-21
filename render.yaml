@@ -1,0 +1,80 @@
+# ============================================
+# Mawid — API NestJS sur Render
+# ============================================
+# Blueprint d'infrastructure. Render le lit à la création du service ; les
+# valeurs marquées `sync: false` restent à saisir dans le tableau de bord et
+# ne transitent jamais par le dépôt (CLAUDE.md §3.1).
+#
+# Rien ici n'est un SDK Render : le code ne connaît que des variables
+# d'environnement. Migrer vers un VPS revient à les repositionner ailleurs
+# (docs/DEPLOYMENT.md §4.5).
+
+services:
+  - type: web
+    name: mawid-api
+    runtime: node
+    plan: free
+    region: frankfurt # Le plus proche de l'Algérie parmi les régions gratuites.
+    rootDir: backend
+
+    buildCommand: npm ci && npx prisma generate && npm run build
+
+    # Les migrations s'appliquent au démarrage, pas depuis un poste de
+    # développement : l'URL de production ne touche jamais une machine
+    # personnelle, et un redéploiement suffit à mettre le schéma à jour.
+    # `migrate deploy` est idempotent, le rejouer à chaque démarrage est sûr.
+    startCommand: npx prisma migrate deploy && node dist/main
+
+    # Render appelle cette route pour savoir si l'instance est vivante. Elle
+    # vérifie aussi la connexion Prisma : un démarrage où la base est
+    # injoignable doit être signalé comme un échec, pas comme un succès.
+    healthCheckPath: /api/health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Render termine le TLS et ajoute un seul X-Forwarded-For. À 0, tous
+      # les clients partageraient l'IP de Render et se bloqueraient
+      # mutuellement au rate limiting ; en confiance aveugle, n'importe qui
+      # pourrait forger l'en-tête et le contourner. Passe à 2 si Cloudflare
+      # est ajouté devant.
+      - key: TRUST_PROXY_HOPS
+        value: "1"
+
+      # Chaîne Neon DIRECTE (sans `-pooler`) : `prisma migrate` a besoin de
+      # verrous consultatifs que le pooler casse, et le backend gère déjà
+      # son propre pool.
+      - key: DATABASE_URL
+        sync: false
+
+      # Généré par Render, jamais écrit nulle part. Surtout pas celui de
+      # docker-compose.yml, qui est public dans le dépôt.
+      - key: JWT_SECRET
+        generateValue: true
+
+      - key: JWT_EXPIRES_IN
+        value: 24h
+
+      # Obligatoire : le backend refuse de démarrer sans, plutôt que de
+      # retomber silencieusement sur localhost.
+      - key: FRONTEND_ORIGINS
+        sync: false
+
+      # Photos de salon. Absentes, le téléversement se désactive et le reste
+      # du produit continue de fonctionner.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+      # Notification des demandes de contact. Absentes, les demandes restent
+      # enregistrées et consultables dans /admin/demandes.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAWID_CONTACT_EMAIL
+        sync: false
+      - key: MAWID_MAIL_FROM
+        sync: false

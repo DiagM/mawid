@@ -1,0 +1,60 @@
+name: Sauvegarde de la base
+
+# ============================================
+# Sauvegarde quotidienne
+# ============================================
+# Le seul risque existentiel du projet : une base perdue met fin à
+# l'activité, alors que tout le reste se répare. Neon garde un historique de
+# branches, mais s'y fier seul reviendrait à confier ses sauvegardes au
+# fournisseur qu'on cherche justement à pouvoir quitter.
+#
+# ⚠️ Une sauvegarde jamais restaurée n'est pas une sauvegarde. Le mode
+# d'emploi de restauration est dans docs/DEPLOYMENT.md §4.3, et l'exercice
+# doit être fait une fois pour de vrai.
+
+on:
+  schedule:
+    # 02h00 UTC, soit 03h00 à Alger : après la fermeture des salons, avant
+    # les premières réservations du matin.
+    - cron: '0 2 * * *'
+  # Déclenchement manuel, pour tester la restauration sans attendre la nuit.
+  workflow_dispatch:
+
+jobs:
+  dump:
+    name: pg_dump
+    runs-on: ubuntu-latest
+
+    # `pg_dump` doit avoir la MÊME version majeure que le serveur, sinon il
+    # refuse de tourner. Passer par l'image officielle garantit cet accord,
+    # là où le paquet préinstallé du runner peut changer sans prévenir.
+    container:
+      image: postgres:16-alpine
+
+    steps:
+      - name: Sauvegarder
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "Secret DATABASE_URL absent : sauvegarde impossible." >&2
+            exit 1
+          fi
+
+          # Format personnalisé et compressé : plus compact, et restaurable
+          # table par table avec pg_restore — utile quand on ne veut
+          # récupérer qu'une donnée effacée par erreur.
+          pg_dump --format=custom --no-owner --no-acl \
+            --file="mawid-$(date -u +%Y-%m-%d).dump" "$DATABASE_URL"
+
+          ls -lh mawid-*.dump
+
+      - name: Archiver
+        uses: actions/upload-artifact@v4
+        with:
+          name: mawid-backup-${{ github.run_id }}
+          path: mawid-*.dump
+          # 30 jours : au-delà, une donnée effacée par erreur a déjà été
+          # remarquée, et les artefacts consomment le quota du dépôt.
+          retention-days: 30
+          if-no-files-found: error

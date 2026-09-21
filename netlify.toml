@@ -1,0 +1,46 @@
+# ============================================
+# Mawid — Frontend Next.js sur Netlify
+# ============================================
+# Les variables sensibles n'ont pas leur place ici : le frontend n'en
+# manipule aucune. Les trois valeurs ci-dessous sont publiques par nature —
+# elles finissent dans le HTML servi au navigateur — et se positionnent dans
+# le tableau de bord Netlify.
+#
+#   NEXT_PUBLIC_API_URL   https://mawid-api.onrender.com/api
+#   NEXT_PUBLIC_SITE_URL  https://mawid.netlify.app
+#
+# ⚠️ NE PAS positionner BACKEND_INTERNAL_URL. En développement, les
+# composants serveur passent par le réseau Docker interne ; sur Netlify ce
+# réseau n'existe pas, et `lib/api.ts` retombe alors correctement sur
+# NEXT_PUBLIC_API_URL. La renseigner ferait pointer le rendu serveur vers un
+# hôte injoignable.
+#
+# NEXT_PUBLIC_SITE_URL est indispensable : sans elle, les liens de gestion
+# glissés dans les rappels WhatsApp, le sitemap et les métadonnées Open Graph
+# pointeraient vers localhost.
+
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Le runtime Next.js de Netlify prend en charge le rendu serveur, les Server
+# Actions et les routes dynamiques. Sans lui, seules les pages statiques
+# seraient servies — soit presque rien, tout le produit étant dynamique.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# En-têtes de sécurité. Le backend a les siens via Helmet ; ceux-ci
+# concernent les pages HTML, que Helmet ne sert jamais.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # Les fiches salon sont censées être partagées et prévisualisées ;
+    # interdire toute mise en cadre casserait ces aperçus sans rien protéger
+    # d'une application qui n'a pas de session dans un iframe.
+    X-Frame-Options = "SAMEORIGIN"
