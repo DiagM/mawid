@@ -71,6 +71,14 @@ export const fr = {
     minutes: 'min',
   },
 
+  notFound: {
+    title: 'Page introuvable',
+    help:
+        'Cette page n’existe pas, ou n’existe plus. Le lien que vous avez suivi est peut-être incomplet — ils se coupent souvent quand on les recopie à la main.',
+    search: 'Chercher un salon',
+    forSalons: 'Vous êtes un salon ?',
+  },
+
   weekdays: {
     monday: 'Lundi',
     tuesday: 'Mardi',
