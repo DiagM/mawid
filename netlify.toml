@@ -6,8 +6,16 @@
 # elles finissent dans le HTML servi au navigateur — et se positionnent dans
 # le tableau de bord Netlify.
 #
-#   NEXT_PUBLIC_API_URL   https://mawid-api.onrender.com/api
-#   NEXT_PUBLIC_SITE_URL  https://mawid.netlify.app
+#   NEXT_PUBLIC_API_URL    https://mawid-api.onrender.com/api
+#   NEXT_PUBLIC_SITE_URL   https://maweid.netlify.app
+#   MAWID_ALLOW_INDEXING   (absente tant que le produit est en test)
+#
+# MAWID_ALLOW_INDEXING ouvre le site aux moteurs de recherche. Absente,
+# robots.txt refuse tout le site et chaque page porte `noindex` : le
+# produit reste accessible a qui a le lien, mais n'entre pas dans l'index
+# de Google. A poser a `true` LE JOUR DU LANCEMENT — et pas avant, sinon
+# Google reference un catalogue vide sous une adresse provisoire qu'il
+# faudra ensuite faire oublier. Voir frontend/lib/indexing.ts.
 #
 # ⚠️ NE PAS positionner BACKEND_INTERNAL_URL. En développement, les
 # composants serveur passent par le réseau Docker interne ; sur Netlify ce

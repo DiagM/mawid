@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Aref_Ruqaa, Marcellus } from 'next/font/google';
+import { isIndexingAllowed } from '@/lib/indexing';
 import { fr } from '@/lib/i18n/fr';
 import './globals.css';
 
@@ -35,6 +36,14 @@ export const metadata: Metadata = {
   },
   description:
     'Réservez votre rendez-vous chez les salons de beauté et barbershops à Alger, sans créer de compte.',
+  // Seconde barrière, volontairement redondante avec `robots.txt` : un lien
+  // entrant peut faire découvrir une page sans que le robot ait lu
+  // `robots.txt`, et seule la balise `noindex` la fait ressortir de l'index.
+  // Les pages qui définissent leur propre champ `robots` (`/pro`, `/r/`)
+  // gardent le leur : Next fusionne les métadonnées champ par champ.
+  ...(isIndexingAllowed()
+    ? {}
+    : { robots: { index: false, follow: false } }),
 };
 
 export const viewport: Viewport = {

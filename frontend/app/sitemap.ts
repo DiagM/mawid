@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { getSalonSitemap } from '@/lib/api';
+import { isIndexingAllowed } from '@/lib/indexing';
 import { siteUrl } from '@/lib/site-url';
 
 /**
@@ -14,6 +15,13 @@ import { siteUrl } from '@/lib/site-url';
  * partiel vaut mieux qu'une 500 servie à un robot d'indexation.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Rien a proposer aux moteurs tant que l'indexation est fermee. On sort
+  // avant l'appel au backend : inutile de le solliciter a chaque
+  // construction pour une liste que personne ne lira.
+  if (!isIndexingAllowed()) {
+    return [];
+  }
+
   const base = siteUrl();
 
   const home: MetadataRoute.Sitemap = [

@@ -142,7 +142,9 @@ MAWID_MAIL_FROM=Mawid <contact@mawid.dz>   # après vérification du domaine
 
 # Frontend (Netlify)
 NEXT_PUBLIC_API_URL=https://mawid-api.onrender.com/api
-NEXT_PUBLIC_SITE_URL=https://mawid.netlify.app
+NEXT_PUBLIC_SITE_URL=https://maweid.netlify.app
+# Absente tant que le produit est en test. Voir plus bas.
+MAWID_ALLOW_INDEXING=
 ```
 
 **Chaîne Neon : prendre la DIRECTE, pas la « pooled ».** `prisma migrate`
@@ -152,6 +154,17 @@ et le backend gère déjà son propre pool — en empiler deux n'apporte rien.
 **`NEXT_PUBLIC_SITE_URL` n'est pas décorative** : sans elle, les liens de
 gestion glissés dans les rappels WhatsApp, le sitemap et les métadonnées
 Open Graph pointeraient tous vers `localhost`.
+
+**`MAWID_ALLOW_INDEXING` decide si Google voit le site.** Absente ou
+differente de `true`, `robots.txt` refuse tout le site et chaque page
+porte `noindex, nofollow` : le produit reste accessible a qui a le lien,
+mais n'entre pas dans l'index. Le defaut est ferme a dessein — un oubli
+laisse le site discret, ce qui se repare en une variable, alors que
+l'oubli inverse laisse des URL indexees qu'on ne retire pas facilement.
+`robots.ts` et `sitemap.ts` sont generes a la CONSTRUCTION : poser la
+variable sans redeployer n'a aucun effet. A ouvrir le jour du lancement,
+et de preference une fois le domaine definitif en place, pour ne pas
+faire indexer l'adresse Netlify provisoire.
 
 **Ne pas positionner `BACKEND_INTERNAL_URL` sur Netlify.** En développement
 elle désigne le réseau Docker interne ; sur Netlify ce réseau n'existe pas,
