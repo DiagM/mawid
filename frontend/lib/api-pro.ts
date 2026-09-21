@@ -100,6 +100,11 @@ export interface UpdateSalonInput {
   addressLine?: string;
   district?: string;
   openingHours?: OpeningHours;
+  /**
+   * Lien Google Maps du salon. Le serveur en extrait latitude et
+   * longitude ; chaîne vide = retirer la position.
+   */
+  mapsUrl?: string;
 }
 
 export function updateMySalon(

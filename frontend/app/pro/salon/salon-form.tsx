@@ -23,6 +23,8 @@ export function SalonForm({ salon }: { salon: ManagedSalon }) {
     initialState,
   );
 
+  const hasPosition = salon.latitude !== null && salon.longitude !== null;
+
   return (
     <form action={action}>
       <label className="mb-4 block">
@@ -75,6 +77,50 @@ export function SalonForm({ salon }: { salon: ManagedSalon }) {
           className="h-12 w-full rounded-xl border border-border bg-surface px-4 outline-none focus:border-accent"
         />
       </label>
+
+      <label className="mb-2 block">
+        <span className="mb-1 block text-sm font-medium">
+          {fr.pro.salon.mapsUrl}
+        </span>
+        <input
+          type="text"
+          name="mapsUrl"
+          placeholder={fr.pro.salon.mapsUrlPlaceholder}
+          className="h-12 w-full rounded-xl border border-border bg-surface px-4 outline-none focus:border-accent"
+        />
+        <span className="mt-1 block text-xs text-muted">
+          {fr.pro.salon.mapsUrlHelp}
+        </span>
+      </label>
+
+      {/*
+        Le champ reste VIDE meme quand une position existe : on stocke des
+        coordonnees, pas le lien d'origine, donc rien de fidele a reafficher.
+        D'ou ce temoin, et surtout la case a cocher plus bas — sans elle, un
+        gerant qui enregistre ses horaires effacerait sa position au passage,
+        sans rien remarquer.
+      */}
+      <p className="mb-4 text-sm">
+        {hasPosition ? (
+          <span className="font-medium text-accent">
+            {fr.pro.salon.mapsUrlSet}
+          </span>
+        ) : (
+          <span className="text-muted">{fr.pro.salon.mapsUrlNone}</span>
+        )}
+      </p>
+
+      {hasPosition && (
+        <label className="mb-6 flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="removePosition"
+            value="true"
+            className="size-4"
+          />
+          <span>{fr.pro.salon.mapsUrlRemove}</span>
+        </label>
+      )}
 
       <fieldset className="mb-6">
         <legend className="mb-2 text-sm font-medium">

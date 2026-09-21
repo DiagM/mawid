@@ -1,12 +1,20 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { searchSalons, type SalonSearchResult } from '@/lib/api';
+import { formatDistance } from '@/lib/geo';
+import { NearbyButton } from '@/components/nearby-button';
 import { fr } from '@/lib/i18n/fr';
 import { formatPrice } from '@/lib/format';
 import { RatingBadge } from '@/components/stars';
 import { Logo } from '@/components/logo';
 
 type PageProps = {
-  searchParams: Promise<{ q?: string; womenOnly?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    womenOnly?: string;
+    lat?: string;
+    lng?: string;
+  }>;
 };
 
 /**
@@ -20,6 +28,9 @@ export default async function HomePage({ searchParams }: PageProps) {
   const params = await searchParams;
   const query = params.q?.trim() ?? '';
   const womenOnly = params.womenOnly === 'true';
+  // Les deux coordonnees vont ensemble : une seule ferait trier par
+  // rapport a un point pose sur l'equateur.
+  const position = readPosition(params.lat, params.lng);
 
   let results: SalonSearchResult | null = null;
   try {
@@ -27,6 +38,8 @@ export default async function HomePage({ searchParams }: PageProps) {
       city: 'Alger',
       q: query || undefined,
       womenOnly,
+      lat: position?.lat,
+      lng: position?.lng,
     });
   } catch {
     // Backend injoignable : on affiche la recherche plutôt qu'une page
@@ -72,6 +85,12 @@ export default async function HomePage({ searchParams }: PageProps) {
           <span>{fr.search.womenOnly}</span>
         </label>
       </form>
+
+      {/* Hors du <form> : ce bouton ne soumet rien, il remplace l'URL
+          apres avoir obtenu l'accord de la cliente. */}
+      <Suspense fallback={null}>
+        <NearbyButton />
+      </Suspense>
 
       {results === null ? (
         <p className="rounded-xl border border-border bg-surface p-6 text-center text-muted">
@@ -125,6 +144,14 @@ export default async function HomePage({ searchParams }: PageProps) {
                       <h2 className="font-medium">{salon.name}</h2>
                       <p className="mt-0.5 text-sm text-muted">
                         {salon.district}, {salon.city}
+                        {salon.distanceMeters !== null && (
+                          <>
+                            {' · '}
+                            <span className="font-medium text-accent">
+                              {formatDistance(salon.distanceMeters)}
+                            </span>
+                          </>
+                        )}
                       </p>
                       <div className="mt-1">
                         <RatingBadge
@@ -177,4 +204,32 @@ export default async function HomePage({ searchParams }: PageProps) {
       </footer>
     </main>
   );
+}
+
+/**
+ * Position lue dans l'URL.
+ *
+ * Elle vient d'un paramètre public : n'importe qui peut la forger. On refuse
+ * donc tout ce qui n'est pas un couple de nombres dans les bornes du globe,
+ * plutôt que de laisser le backend arbitrer — il renverrait une 400, et la
+ * page de recherche afficherait une erreur là où il suffit d'ignorer.
+ */
+function readPosition(
+  lat?: string,
+  lng?: string,
+): { lat: number; lng: number } | null {
+  if (lat === undefined || lng === undefined) {
+    return null;
+  }
+
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+
+  const valid =
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    Math.abs(latitude) <= 90 &&
+    Math.abs(longitude) <= 180;
+
+  return valid ? { lat: latitude, lng: longitude } : null;
 }

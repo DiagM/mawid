@@ -630,6 +630,50 @@ Une journée entière va de minuit au lendemain minuit, et non à 23:59 : la
 seconde forme laisserait passer un rendez-vous à 23:45 le dernier soir du
 congé.
 
+**Lot 17 — Position du salon et proximité.** ✅ Livré le 2026-09-21.
+
+Ni la carte ni la géolocalisation ne figuraient au périmètre : ajout demandé
+explicitement, et signalé comme tel avant d'être construit.
+
+**Le gérant colle son lien Google Maps**, il ne saisit pas de coordonnées.
+Demander une latitude serait irréel — personne ne la connaît — alors que tout
+salon algérois partage déjà son lien. Le serveur en extrait le point, y
+compris pour un lien court `maps.app.goo.gl` dont il suit la redirection.
+
+**Suivre une redirection fournie par l'utilisateur, c'est le schéma d'une
+SSRF.** Chaque saut est vérifié contre une liste blanche Google — une
+redirection vers `169.254.169.254` est refusée *sans être suivie* ; les sauts
+sont lus un par un plutôt que délégués à `fetch`, qui ne contrôlerait que le
+premier ; la requête est un `HEAD` borné par un délai, le corps n'est jamais
+lu.
+
+**Un lien illisible est refusé, pas ignoré.** Un gérant convaincu d'avoir
+enregistré sa position, dont les clientes n'ont pas d'itinéraire, ne saurait
+jamais d'où vient le problème. Un point hors d'Algérie est refusé également :
+une épingle fausse est pire qu'une épingle absente.
+
+**Le champ reste vide à l'affichage**, puisqu'on stocke des coordonnées et non
+le lien d'origine. D'où une case « Retirer ma position » distincte : sans
+elle, un gérant qui enregistre ses horaires effacerait sa position au passage,
+sans rien remarquer.
+
+**Le tri par distance porte sur l'ensemble filtré, jamais sur une page déjà
+découpée** — sinon un salon proche resterait bloqué en page 2. Même exigence
+que la mise en avant, traitée autrement parce que Prisma ne sait pas ordonner
+par une distance calculée. Haversine en TypeScript, sans PostGIS ni service
+tiers. Tenable jusqu'à quelques milliers de salons ; au-delà, requête brute
+avec pré-filtre par rectangle.
+
+**Les salons sans position passent en dernier, pas à la trappe.** Les exclure
+ferait disparaître du catalogue tout gérant n'ayant pas encore collé son lien,
+et c'est la cliente qui en paierait le prix.
+
+**Le bouton « Itinéraire » utilise l'URL universelle de Google**, sans clé,
+sans quota, sans script tiers chargé dans la page. Les coordonnées priment
+toujours sur l'adresse : « rue dieh mohamed bouzareah » envoie Google chercher
+au jugé, et une destination approximative fait perdre une cliente aussi
+sûrement qu'un lien absent.
+
 ## 6. Hors périmètre, quelle que soit la version
 
 - Application mobile native — le business plan lui-même tranche : « PWA

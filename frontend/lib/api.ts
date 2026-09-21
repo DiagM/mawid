@@ -237,6 +237,11 @@ export interface SalonSearchItem {
   rating: RatingSummary;
   /** Mise en avant payante, en cours de validité (add-on §8.2). */
   isFeatured: boolean;
+  /**
+   * Distance au client, en mètres. `null` hors recherche de proximité,
+   * ou si le salon n'a pas encore déclaré sa position.
+   */
+  distanceMeters: number | null;
 }
 
 export interface SalonSearchResult {
@@ -250,6 +255,13 @@ export interface SearchFilters {
   city?: string;
   q?: string;
   womenOnly?: boolean;
+  /**
+   * Position du client. Les deux vont ensemble : une seule des deux
+   * ferait trier par rapport à un point posé sur l'équateur, et le
+   * backend l'ignore.
+   */
+  lat?: number;
+  lng?: number;
 }
 
 export function searchSalons(
@@ -259,6 +271,10 @@ export function searchSalons(
   if (filters.city) query.set('city', filters.city);
   if (filters.q) query.set('q', filters.q);
   if (filters.womenOnly) query.set('womenOnly', 'true');
+  if (filters.lat !== undefined && filters.lng !== undefined) {
+    query.set('lat', String(filters.lat));
+    query.set('lng', String(filters.lng));
+  }
 
   const suffix = query.toString() ? `?${query.toString()}` : '';
   return apiFetch<SalonSearchResult>(`/salons${suffix}`);

@@ -167,6 +167,18 @@ export async function updateSalonAction(
     return { error: fr.pro.salon.invalidHours };
   }
 
+  // `mapsUrl` n'est envoye que s'il y a quelque chose a dire. Le champ
+  // est toujours rendu vide — on stocke des coordonnees, pas le lien —
+  // donc l'envoyer systematiquement effacerait la position a chaque
+  // enregistrement d'horaires. Le retrait passe par une case dediee.
+  const mapsUrl = String(formData.get('mapsUrl') ?? '').trim();
+  const removePosition = formData.get('removePosition') === 'true';
+  const position = removePosition
+    ? { mapsUrl: '' }
+    : mapsUrl
+      ? { mapsUrl }
+      : {};
+
   try {
     await pro.updateMySalon(token, {
       name: String(formData.get('name') ?? ''),
@@ -174,6 +186,7 @@ export async function updateSalonAction(
       addressLine: String(formData.get('addressLine') ?? ''),
       district: String(formData.get('district') ?? ''),
       openingHours,
+      ...position,
     });
   } catch (error) {
     return { error: toMessage(error, fr.common.error) };

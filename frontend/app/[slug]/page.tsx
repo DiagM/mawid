@@ -11,6 +11,7 @@ import {
 } from '@/lib/api';
 import { fr, type WeekdayKey } from '@/lib/i18n/fr';
 import { formatDuration, formatPhone, formatPrice } from '@/lib/format';
+import { directionsUrl } from '@/lib/maps';
 import { salonJsonLd, serializeJsonLd } from '@/lib/json-ld';
 import { RatingBadge, Stars } from '@/components/stars';
 import { siteUrl } from '@/lib/site-url';
@@ -132,12 +133,27 @@ export default async function SalonPage({ params }: PageProps) {
           <p className="mt-4 leading-relaxed text-muted">{salon.description}</p>
         )}
 
-        <a
-          href={`tel:${salon.contactPhone}`}
-          className="mt-4 inline-flex items-center gap-2 text-accent underline underline-offset-4"
-        >
-          {formatPhone(salon.contactPhone)}
-        </a>
+        <div className="mt-4 flex flex-wrap items-center gap-4">
+          <a
+            href={`tel:${salon.contactPhone}`}
+            className="inline-flex items-center gap-2 text-accent underline underline-offset-4"
+          >
+            {formatPhone(salon.contactPhone)}
+          </a>
+
+          {/* Itinéraire : lien sortant vers Maps, sans clé ni script
+              tiers. Sur téléphone — d'où vient presque tout le trafic —
+              il ouvre directement l'application. */}
+          <a
+            href={directionsUrl(salon)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-medium transition-colors hover:border-accent"
+          >
+            <span aria-hidden>🗺️</span>
+            {fr.salon.directions}
+          </a>
+        </div>
       </header>
 
       {salon.photos.length > 0 && (

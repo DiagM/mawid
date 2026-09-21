@@ -40,10 +40,24 @@ export const fr = {
     featured: 'Mis en avant',
     forSalons: 'Vous êtes un salon ? Inscrivez-vous sur Mawid',
     contact: 'Nous contacter',
+    nearby: 'Salons autour de moi',
+    nearbyLocating: 'Localisation…',
+    nearbyActive: 'Triés par distance',
+    nearbyClear: 'Annuler',
+    nearbyDenied:
+      'Vous avez refusé le partage de votre position. Autorisez-la dans ' +
+      'les réglages de votre navigateur pour trier par distance.',
+    nearbyUnavailable:
+      'Position introuvable. Réessayez dehors ou avec le GPS activé.',
+    nearbyUnsupported:
+      'Votre navigateur ne sait pas partager votre position.',
+    noPosition: 'Position non renseignée',
   },
 
   salon: {
     photos: 'Photos du salon',
+    directions: 'Itinéraire',
+
     closed: 'Fermé',
     openingHours: "Horaires d'ouverture",
     services: 'Prestations',
@@ -572,6 +586,15 @@ export const fr = {
       description: 'Description',
       addressLine: 'Adresse',
       district: 'Quartier',
+      mapsUrl: 'Lien Google Maps',
+      mapsUrlHelp:
+        'Ouvrez votre salon dans Google Maps, touchez Partager, puis collez ' +
+        'le lien ici. Vos clientes auront un bouton Itinéraire, et votre ' +
+        'salon remontera dans la recherche « autour de moi ».',
+      mapsUrlPlaceholder: 'https://maps.app.goo.gl/…',
+      mapsUrlSet: 'Position enregistrée',
+      mapsUrlNone: 'Aucune position enregistrée',
+      mapsUrlRemove: 'Retirer ma position',
       hours: 'Horaires',
       openLabel: 'Ouvert',
       closedLabel: 'Fermé',
