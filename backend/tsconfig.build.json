@@ -1,4 +1,18 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+  // `prisma` (les scripts tsx du fondateur) et `prisma.config.ts` vivent a
+  // la racine du service, pas dans `src`. Les laisser dans la compilation
+  // remontait le rootDir TypeScript d'un cran : la sortie devenait
+  // `dist/src/main.js` alors que la CLI Nest et `start:prod` attendent
+  // `dist/main.js` — d'ou le « Cannot find module dist/main » au demarrage.
+  // Ces fichiers n'ont pas besoin d'etre compiles : tsx lit les scripts a la
+  // source, et la CLI Prisma lit `prisma.config.ts` telle quelle.
+  "exclude": [
+    "node_modules",
+    "test",
+    "dist",
+    "**/*spec.ts",
+    "./prisma",
+    "./prisma.config.ts"
+  ]
 }

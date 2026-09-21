@@ -89,7 +89,12 @@ async function bootstrap() {
   // pour qu'ils exercent exactement la même application.
   configureApp(app);
 
-  const port = process.env.BACKEND_PORT ?? 3001;
+  // `PORT` d'abord : les hebergeurs (Render, Fly, Railway) imposent le port
+  // qu'ils ont ouvert et declarent le deploiement en echec si rien n'ecoute
+  // dessus — un service qui tourne mais sur le mauvais port est signale
+  // « No open ports detected ». `BACKEND_PORT` reste pour docker-compose,
+  // ou c'est nous qui choisissons.
+  const port = process.env.PORT ?? process.env.BACKEND_PORT ?? 3001;
   await app.listen(port, '0.0.0.0');
 
   console.log(`🚀 Backend Mawid démarré sur http://localhost:${port}/api`);

@@ -17,7 +17,12 @@ services:
     region: frankfurt # Le plus proche de l'Algérie parmi les régions gratuites.
     rootDir: backend
 
-    buildCommand: npm ci && npx prisma generate && npm run build
+    # `--include=dev` n'est PAS une coquille. NODE_ENV=production ci-dessous
+    # s'applique aussi a la phase de construction, et npm en deduit
+    # `omit=dev` : sans ce drapeau, `@nestjs/cli`, `typescript` et `prisma`
+    # ne sont pas installes et la construction echoue sur « nest: not found ».
+    # Le drapeau ne concerne que le build ; l'execution garde NODE_ENV=production.
+    buildCommand: npm ci --include=dev && npx prisma generate && npm run build
 
     # Les migrations s'appliquent au démarrage, pas depuis un poste de
     # développement : l'URL de production ne touche jamais une machine
