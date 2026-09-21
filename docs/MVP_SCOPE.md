@@ -542,6 +542,30 @@ Le blocage est vérifié **avant** la disponibilité : sinon une personne
 bloquée apprendrait, par la différence de message, si la journée est
 complète.
 
+**Lot 14 — Rappels de la veille.** ✅ Livré le 2026-09-21.
+
+Le no-show est le problème numéro un des rendez-vous en beauté, et
+`stats.service` le mesure déjà (`noShowRate`) — sans qu'aucun outil ne le
+combatte. Le fichier `.ics` remis à la réservation ne suffit pas : peu de
+gens l'ouvrent.
+
+`/pro/rappels` donne la liste du soir, par défaut celle de demain, avec un
+lien `wa.me` préparé. Aucun envoi automatique — il se facturerait au
+message. `Reservation.remindedAt` garde la trace : sans elle, un gérant
+interrompu au milieu de sa liste recommencerait au début et écrirait deux
+fois aux mêmes clientes.
+
+**Le message contient le lien de gestion.** Le `cancellationToken` est donc
+renvoyé au gérant, contrairement à l'agenda. C'est assumé : il permet à la
+cliente de se décommander seule plutôt que de ne pas venir, ce qui
+**récupère le créneau** au lieu de le perdre. Le gérant peut de toute façon
+annuler ce rendez-vous depuis ses propres routes — l'exposer ne lui donne
+aucun pouvoir supplémentaire.
+
+**Ouvert à toutes les offres.** Le no-show frappe d'abord les petits
+salons : en faire un privilège payant reviendrait à vendre la réparation
+d'un problème qu'on laisse grandir.
+
 ## 6. Hors périmètre, quelle que soit la version
 
 - Application mobile native — le business plan lui-même tranche : « PWA

@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString, Length } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsString, Length } from 'class-validator';
 
 /**
  * Transitions de statut autorisées au gérant depuis son agenda.
@@ -25,4 +25,15 @@ export class UpdateReservationStatusDto {
   @IsString()
   @Length(0, 500)
   internalNote?: string;
+}
+
+/**
+ * Marque le rappel de la veille comme envoyé, ou revient en arrière.
+ *
+ * Sans cette trace, un gérant interrompu au milieu de sa liste
+ * recommencerait au début et écrirait deux fois aux mêmes clientes.
+ */
+export class MarkRemindedDto {
+  @IsBoolean()
+  reminded!: boolean;
 }

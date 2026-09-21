@@ -773,3 +773,16 @@ export async function removeWaitlistEntryAction(
   await pro.removeWaitlistEntry(token, id);
   revalidatePath('/pro');
 }
+
+// ============================================
+// Rappels de la veille
+// ============================================
+
+export async function setRemindedAction(formData: FormData): Promise<void> {
+  const token = await requireSessionToken();
+  const id = String(formData.get('id') ?? '');
+  const reminded = String(formData.get('reminded') ?? '') === 'true';
+
+  await pro.setReminded(token, id, reminded);
+  revalidatePath('/pro/rappels');
+}

@@ -11,7 +11,10 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { ReservationsService } from './reservations.service';
 import { AgendaQueryDto } from './dto/agenda-query.dto';
-import { UpdateReservationStatusDto } from './dto/update-reservation-status.dto';
+import {
+  MarkRemindedDto,
+  UpdateReservationStatusDto,
+} from './dto/update-reservation-status.dto';
 import {
   RescheduleAvailabilityQueryDto,
   RescheduleReservationDto,
@@ -67,6 +70,31 @@ export class ReservationsController {
     @Body() dto: UpdateReservationStatusDto,
   ) {
     return this.reservationsService.updateStatus(user.id, id, dto);
+  }
+
+  /**
+   * GET /api/reservations/reminders?date=YYYY-MM-DD
+   * Rendez-vous à rappeler, par défaut ceux de demain. Déclarée avant
+   * /:id/... : aucun conflit, les préfixes diffèrent.
+   */
+  @Get('reminders')
+  @UseGuards(JwtAuthGuard)
+  reminders(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: AgendaQueryDto,
+  ) {
+    return this.reservationsService.remindersFor(user.id, query.from);
+  }
+
+  /** PATCH /api/reservations/:id/reminded — rappel envoyé, ou non. */
+  @Patch(':id/reminded')
+  @UseGuards(JwtAuthGuard)
+  setReminded(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() dto: MarkRemindedDto,
+  ) {
+    return this.reservationsService.setReminded(user.id, id, dto.reminded);
   }
 
   /**

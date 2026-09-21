@@ -666,3 +666,45 @@ export function removeWaitlistEntry(token: string, id: string): Promise<void> {
     token,
   });
 }
+
+// ============================================
+// Rappels de la veille
+// ============================================
+
+export interface ReminderItem {
+  id: string;
+  localTime: string;
+  clientFirstName: string;
+  clientPhone: string;
+  /** Sert à construire le lien de gestion glissé dans le message. */
+  cancellationToken: string;
+  remindedAt: string | null;
+  employeeName: string | null;
+  prestations: string;
+}
+
+export interface Reminders {
+  date: string;
+  items: ReminderItem[];
+}
+
+export function getReminders(
+  token: string,
+  date?: string,
+): Promise<Reminders> {
+  const suffix = date ? `?from=${encodeURIComponent(date)}` : '';
+
+  return apiFetch<Reminders>(`/reservations/reminders${suffix}`, { token });
+}
+
+export function setReminded(
+  token: string,
+  id: string,
+  reminded: boolean,
+): Promise<unknown> {
+  return apiFetch(`/reservations/${encodeURIComponent(id)}/reminded`, {
+    method: 'PATCH',
+    token,
+    body: { reminded },
+  });
+}

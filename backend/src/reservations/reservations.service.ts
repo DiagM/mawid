@@ -489,6 +489,93 @@ export class ReservationsService {
   }
 
   // ============================================
+  // Rappels de la veille
+  // ============================================
+
+  /**
+   * Rendez-vous à rappeler, par défaut ceux de demain.
+   *
+   * Le no-show est le problème numéro un des rendez-vous en beauté, et le
+   * produit ne le combattait qu'avec un fichier `.ics` que peu de gens
+   * ouvrent. Ici le gérant a sa liste du soir, prête à envoyer.
+   *
+   * Seuls les rendez-vous **confirmés** y figurent : rappeler un rendez-vous
+   * annulé ferait passer le salon pour désorganisé.
+   *
+   * ⚠️ Le `cancellationToken` est renvoyé, contrairement à l'agenda. C'est
+   * assumé : il sert à glisser dans le message le lien que la cliente
+   * possède déjà, pour qu'elle puisse se décommander seule plutôt que de ne
+   * pas venir — c'est ce qui récupère le créneau. Le gérant peut de toute
+   * façon annuler ce rendez-vous depuis ses propres routes, l'exposer ne lui
+   * donne aucun pouvoir supplémentaire.
+   */
+  async remindersFor(userId: string, date?: string) {
+    const salon = await this.getOwnedSalon(userId);
+
+    const day = date ?? tomorrowLocalDate();
+    const { start, end } = localDayRangeUtc(day);
+
+    const reservations = await this.prisma.reservation.findMany({
+      where: {
+        salonId: salon.id,
+        status: 'CONFIRMED',
+        startsAt: { gte: start, lt: end },
+      },
+      orderBy: { startsAt: 'asc' },
+      select: {
+        id: true,
+        startsAt: true,
+        clientFirstName: true,
+        clientPhone: true,
+        cancellationToken: true,
+        remindedAt: true,
+        employee: { select: { fullName: true } },
+        reservationPrestations: { select: { nameSnapshot: true } },
+      },
+    });
+
+    return {
+      date: day,
+      items: reservations.map((reservation) => ({
+        id: reservation.id,
+        localTime: utcToLocalTime(reservation.startsAt),
+        clientFirstName: reservation.clientFirstName,
+        clientPhone: reservation.clientPhone,
+        cancellationToken: reservation.cancellationToken,
+        remindedAt: reservation.remindedAt?.toISOString() ?? null,
+        employeeName: reservation.employee?.fullName ?? null,
+        prestations: reservation.reservationPrestations
+          .map((line) => line.nameSnapshot)
+          .join(' + '),
+      })),
+    };
+  }
+
+  /** Marque un rappel comme envoyé, ou revient en arrière. */
+  async setReminded(userId: string, reservationId: string, reminded: boolean) {
+    const salon = await this.getOwnedSalon(userId);
+
+    const reservation = await this.prisma.reservation.findUnique({
+      where: { id: reservationId },
+      select: { id: true, salonId: true },
+    });
+
+    if (!reservation) {
+      throw new NotFoundException('Réservation introuvable');
+    }
+
+    if (reservation.salonId !== salon.id) {
+      throw new ForbiddenException("Vous n'avez pas accès à cette réservation");
+    }
+
+    return this.prisma.reservation.update({
+      where: { id: reservation.id },
+      data: { remindedAt: reminded ? new Date() : null },
+      select: { id: true, remindedAt: true },
+    });
+  }
+
+  // ============================================
   // Helpers privés
   // ============================================
 
@@ -708,4 +795,9 @@ export class ReservationsService {
       ...(includeToken && { cancellationToken: reservation.cancellationToken }),
     };
   }
+}
+
+/** Date locale de demain, dans le fuseau des salons. */
+function tomorrowLocalDate(): string {
+  return utcToLocalDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
 }

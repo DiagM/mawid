@@ -297,6 +297,12 @@ model Reservation {
   // Notes internes du gérant (privé, jamais montré au client)
   internalNote String? @db.Text
 
+  // Rappel de la veille envoyé par le gérant, à la main depuis son WhatsApp
+  // (aucun envoi automatique : il se facturerait au message). On garde la
+  // trace plutôt que de deviner : sans elle, le gérant interrompu au milieu
+  // de sa liste recommencerait au début et écrirait deux fois aux mêmes.
+  remindedAt DateTime?
+
   // Métadonnées
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

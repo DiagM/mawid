@@ -176,6 +176,23 @@ export const fr = {
     signingIn: 'Connexion…',
     signOut: 'Déconnexion',
 
+    reminders: {
+      title: 'Rappels de la veille',
+      help:
+        'Un message la veille réduit fortement les rendez-vous manqués. Mawid n’envoie rien : vous écrivez depuis votre WhatsApp, donc depuis votre numéro.',
+      day: 'Jour',
+      empty: 'Aucun rendez-vous confirmé ce jour-là.',
+      progress: '{done} rappel(s) envoyé(s) sur {total}',
+      send: 'Écrire sur WhatsApp',
+      sent: 'Rappelée',
+      markSent: 'Marquer rappelée',
+      markPending: 'Marquer à rappeler',
+      message:
+        'Bonjour {firstName}, petit rappel : vous avez rendez-vous demain à {time} chez {salon}. Si vous ne pouvez pas venir, prévenez-nous ici : {link}',
+      linkHelp:
+        'Le message contient le lien de gestion : la cliente peut se décommander seule, et le créneau repart à quelqu’un d’autre.',
+    },
+
     waitlist: {
       title: '{count} cliente(s) en attente ce jour-là',
       help: '{pending} à rappeler. Première arrivée, première rappelée.',
@@ -280,6 +297,7 @@ export const fr = {
       salon: 'Mon salon',
       prestations: 'Prestations',
       team: 'Équipe',
+      reminders: 'Rappels',
       reviews: 'Avis',
       stats: 'Statistiques',
       clients: 'Clients',
