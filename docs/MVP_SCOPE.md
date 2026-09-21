@@ -598,6 +598,38 @@ s'affiche sans photo.
 `docker-compose.yml` via `env_file`. Il est dans `.gitignore` — ne jamais
 le committer (CLAUDE.md §3.1).
 
+**Lot 16 — Identité, contact et absences longues.** ✅ Livré le 2026-09-21.
+
+**Identité.** Logo موعد en Ruq'ah (Aref Ruqaa), palette terre cuite et
+crème, titres en serif. Non genré délibérément : un rose poudré aurait fait
+fuir les barbershops, cible d'amorçage du business plan. Polices chargées
+par `next/font`, donc téléchargées au build — zéro appel à Google au
+chargement, la décision d'origine tient.
+
+**Contact et tickets.** Deux portes — publique et back-office — un seul
+traitement. Le ticket est la source de vérité, pas l'e-mail : un e-mail se
+perd dans une boîte, une file avec un statut ne se perd pas. L'envoi Resend
+ne lève jamais et son échec ne fait jamais échouer une demande. Sans
+configuration, l'envoi se désactive et tout continue.
+
+**Absences.** Trois constats en ouvrant le sujet :
+
+1. Les **jours de congé hebdomadaires existaient déjà** — décocher un jour
+   dans les horaires d'un membre le rend indisponible tous les lundis, et le
+   moteur le respectait. Mais c'était étiqueté « Horaires » : personne ne
+   pouvait le deviner. Corrigé par le libellé, pas par du code.
+2. Les **absences de plusieurs jours étaient possibles côté serveur** et
+   impossibles à saisir : le formulaire n'acceptait qu'une date unique. Il
+   propose désormais deux formes — quelques heures, ou plusieurs jours.
+3. La **borne de 30 jours refusait un congé d'été complet**, le cas le plus
+   banal. Portée à un trimestre. Au-delà ce n'est plus une absence, c'est un
+   membre à archiver — et garder une borne protège d'une faute de frappe sur
+   l'année, qui fermerait l'agenda pour toujours.
+
+Une journée entière va de minuit au lendemain minuit, et non à 23:59 : la
+seconde forme laisserait passer un rendez-vous à 23:45 le dernier soir du
+congé.
+
 ## 6. Hors périmètre, quelle que soit la version
 
 - Application mobile native — le business plan lui-même tranche : « PWA

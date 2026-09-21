@@ -136,11 +136,25 @@ describe('BlockedSlotsService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('refuse un blocage de plus de 30 jours', async () => {
+    it('accepte un congé d’un mois complet', async () => {
+      // Le plafond d'origine, trente jours, refusait un congé d'été entier —
+      // le cas le plus banal d'absence longue.
+      await expect(
+        service.create(GERANT_A, {
+          startsAt: '2026-08-01T00:00:00.000Z',
+          endsAt: '2026-08-31T22:59:00.000Z',
+        }),
+      ).resolves.toBeDefined();
+    });
+
+    it('refuse un blocage de plus de trois mois', async () => {
+      // Au-delà, ce n'est plus une absence : c'est un membre à archiver. La
+      // borne protège surtout d'une faute de frappe sur l'année, qui
+      // fermerait l'agenda pour toujours.
       await expect(
         service.create(GERANT_A, {
           startsAt: '2026-10-05T11:00:00.000Z',
-          endsAt: '2026-12-05T11:00:00.000Z',
+          endsAt: '2027-10-05T11:00:00.000Z',
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
     });

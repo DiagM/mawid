@@ -12,8 +12,16 @@ import {
   utcToLocalTime,
 } from '../common/time/algiers-time';
 
-/** Durée maximale d'un blocage : au-delà, c'est une fermeture, pas une pause. */
-const MAX_BLOCK_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
+/**
+ * Durée maximale d'un blocage : un trimestre.
+ *
+ * Trente jours ne suffisaient pas — un congé d'été d'un mois complet était
+ * refusé, alors que c'est le cas le plus banal. Au-delà de trois mois en
+ * revanche, ce n'est plus une absence : c'est un membre à archiver, ou un
+ * salon à désactiver. Garder une borne évite qu'une faute de frappe sur
+ * l'année ferme l'agenda pour toujours.
+ */
+const MAX_BLOCK_DURATION_MS = 92 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class BlockedSlotsService {
@@ -68,7 +76,7 @@ export class BlockedSlotsService {
 
     if (endsAt.getTime() - startsAt.getTime() > MAX_BLOCK_DURATION_MS) {
       throw new BadRequestException(
-        'Un créneau bloqué ne peut pas dépasser 30 jours',
+        'Une indisponibilité ne peut pas dépasser 3 mois. Au-delà, archivez le membre.',
       );
     }
 

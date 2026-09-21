@@ -340,11 +340,13 @@ export const fr = {
         'Aucun membre. Sans équipe, votre salon accepte un rendez-vous à la fois.',
       help:
         'Chaque membre peut recevoir un client en parallèle des autres. Le premier membre ajouté reprend vos rendez-vous à venir.',
-      hours: 'Horaires',
+      hours: 'Horaires et jours de congé',
       followsSalon: 'Suit les horaires du salon',
       customHours: 'Horaires personnalisés',
       hoursHelp:
-        'Décocher « suit les horaires du salon » permet de définir des heures propres à ce membre. Attention : décocher aussi tous les jours le rendrait indisponible en permanence.',
+        'Décochez un jour pour en faire un congé hebdomadaire : ce membre ne sera plus jamais proposé ce jour-là, sans rien avoir à ressaisir. Attention, décocher les sept jours le rendrait indisponible en permanence.',
+      dayOffHint:
+        'Un jour décoché = congé toutes les semaines. Pour des vacances ou une absence ponctuelle, passez par Indisponibilités.',
       moveUp: 'Remonter dans la liste',
       archiveHelp:
         'Un membre ne peut être archivé que lorsqu’il n’a plus de rendez-vous à venir.',
@@ -601,6 +603,14 @@ export const fr = {
       end: 'Fin',
       reason: 'Motif (optionnel)',
       reasonPlaceholder: 'Pause déjeuner',
+      reasonDaysPlaceholder: 'Congé annuel',
+      modeHours: 'Quelques heures',
+      modeDays: 'Plusieurs jours',
+      from: 'Du',
+      to: 'Au',
+      invalidRange: 'La date de fin doit suivre la date de début.',
+      recurringHint:
+        'Pour un jour de congé chaque semaine — « Nadia ne travaille jamais le lundi » — réglez plutôt ses horaires sur la page Équipe : c’est valable indéfiniment, sans rien resaisir.',
       who: 'Qui est indisponible ?',
       wholeSalon: 'Tout le salon',
       forEmployee: 'Absence : {name}',

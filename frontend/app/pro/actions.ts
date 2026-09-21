@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { ApiError } from '@/lib/api';
 import * as pro from '@/lib/api-pro';
 import { fr } from '@/lib/i18n/fr';
-import { toE164 } from '@/lib/format';
+import { addDays, toE164 } from '@/lib/format';
 import {
   createSession,
   destroySession,
@@ -497,26 +497,53 @@ export async function createBlockedSlotAction(
 ): Promise<ActionState> {
   const token = await requireSessionToken();
 
-  const date = String(formData.get('date') ?? '');
-  const start = String(formData.get('start') ?? '');
-  const end = String(formData.get('end') ?? '');
+  // Deux formes pour une même notion : quelques heures dans une journée, ou
+  // une absence de plusieurs jours. Les distinguer dans le formulaire évite
+  // de faire saisir « 00:00 » et « 23:59 » pour poser un congé.
+  const mode = String(formData.get('mode') ?? 'hours');
   const reason = String(formData.get('reason') ?? '');
   // Vide = tout le salon. C'est le comportement d'un salon sans équipe, et
   // celui d'une vraie fermeture ; viser une personne est le cas particulier.
   const employeeId = String(formData.get('employeeId') ?? '');
 
-  if (!date || !start || !end) {
-    return { error: fr.common.error };
-  }
+  let startsAt: string;
+  let endsAt: string;
 
-  if (end <= start) {
-    return { error: fr.pro.salon.invalidHours };
-  }
+  if (mode === 'days') {
+    const from = String(formData.get('from') ?? '');
+    const to = String(formData.get('to') ?? '');
 
-  // Le gérant saisit des heures locales ; l'API attend de l'UTC. La
-  // conversion passe par le même fuseau que le backend, sans offset en dur.
-  const startsAt = localToUtcIso(date, start);
-  const endsAt = localToUtcIso(date, end);
+    if (!from || !to) {
+      return { error: fr.common.error };
+    }
+
+    if (to < from) {
+      return { error: fr.pro.blocked.invalidRange };
+    }
+
+    // Journées entières : du premier jour à minuit au lendemain du dernier.
+    // Borner à 23:59 laisserait passer un rendez-vous à 23:45 le dernier
+    // soir du congé.
+    startsAt = localToUtcIso(from, '00:00');
+    endsAt = localToUtcIso(addDays(to, 1), '00:00');
+  } else {
+    const date = String(formData.get('date') ?? '');
+    const start = String(formData.get('start') ?? '');
+    const end = String(formData.get('end') ?? '');
+
+    if (!date || !start || !end) {
+      return { error: fr.common.error };
+    }
+
+    if (end <= start) {
+      return { error: fr.pro.salon.invalidHours };
+    }
+
+    // Le gérant saisit des heures locales ; l'API attend de l'UTC. La
+    // conversion passe par le même fuseau que le backend, sans offset en dur.
+    startsAt = localToUtcIso(date, start);
+    endsAt = localToUtcIso(date, end);
+  }
 
   try {
     await pro.createBlockedSlot(token, {

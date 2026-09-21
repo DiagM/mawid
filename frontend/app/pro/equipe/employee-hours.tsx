@@ -117,7 +117,8 @@ export function EmployeeHours({ employee }: { employee: ManagedEmployee }) {
             </div>
           )}
 
-          <p className="mb-3 text-xs text-muted">{fr.pro.team.hoursHelp}</p>
+          <p className="mb-1 text-xs text-muted">{fr.pro.team.hoursHelp}</p>
+          <p className="mb-3 text-xs text-muted">{fr.pro.team.dayOffHint}</p>
 
           {state.error && (
             <p role="alert" className="mb-3 text-sm text-danger">
