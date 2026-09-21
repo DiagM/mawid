@@ -75,3 +75,31 @@ process.env.THROTTLE_DEFAULT_LIMIT ??= '100000';
 process.env.THROTTLE_AUTH_LIMIT ??= '100000';
 process.env.THROTTLE_BOOKING_LIMIT ??= '100000';
 process.env.THROTTLE_TOKEN_LIMIT ??= '100000';
+
+/**
+ * ============================================
+ * Services tiers : neutralisés, jamais hérités
+ * ============================================
+ * Ces valeurs sont **imposées**, pas complétées par défaut. La nuance a
+ * coûté deux choses :
+ *
+ * 1. **La CI échouait.** `POST /salons/me/photos/signature` renvoie 503 sans
+ *    configuration Cloudinary. La suite passait en local — où `backend/.env`
+ *    fournit de vraies clés — et échouait sur un runner qui n'en a aucune.
+ *    Une suite dont le résultat dépend du poste qui l'exécute ne prouve rien.
+ *
+ * 2. **Les tests envoyaient de vrais e-mails.** `support.e2e-spec` crée une
+ *    quinzaine de demandes, et chacune notifie le fondateur. Avec les vraies
+ *    clés Resend dans l'environnement, chaque exécution de la suite
+ *    remplissait sa boîte.
+ *
+ * Les clés Cloudinary sont donc fictives mais présentes — la signature est
+ * un calcul local, aucun appel réseau — et l'envoi d'e-mail est coupé net.
+ */
+process.env.CLOUDINARY_CLOUD_NAME = 'test-cloud';
+process.env.CLOUDINARY_API_KEY = '000000000000000';
+process.env.CLOUDINARY_API_SECRET = 'signature-de-test-sans-valeur';
+
+process.env.RESEND_API_KEY = '';
+process.env.MAWID_CONTACT_EMAIL = '';
+process.env.MAWID_MAIL_FROM = '';
