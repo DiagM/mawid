@@ -708,3 +708,63 @@ export function setReminded(
     body: { reminded },
   });
 }
+
+// ============================================
+// Photos du salon
+// ============================================
+
+export interface UploadSignature {
+  cloudName: string;
+  apiKey: string;
+  timestamp: number;
+  folder: string;
+  signature: string;
+}
+
+/** Autorisation d'envoi, limitée au dossier du salon du gérant connecté. */
+export function getUploadSignature(token: string): Promise<UploadSignature> {
+  return apiFetch<UploadSignature>('/salons/me/photos/signature', {
+    method: 'POST',
+    token,
+  });
+}
+
+/**
+ * Enregistre une photo déposée.
+ *
+ * On n'envoie que l'identifiant : c'est le backend qui relit l'adresse
+ * définitive auprès de l'hébergeur. Transmettre l'URL depuis le navigateur
+ * permettrait d'en inventer une.
+ */
+export function confirmPhoto(
+  token: string,
+  publicId: string,
+): Promise<{ photos: string[] }> {
+  return apiFetch('/salons/me/photos', {
+    method: 'POST',
+    token,
+    body: { publicId },
+  });
+}
+
+export function deletePhoto(
+  token: string,
+  url: string,
+): Promise<{ photos: string[] }> {
+  return apiFetch('/salons/me/photos', {
+    method: 'DELETE',
+    token,
+    body: { url },
+  });
+}
+
+export function reorderPhotos(
+  token: string,
+  photos: string[],
+): Promise<{ photos: string[] }> {
+  return apiFetch('/salons/me/photos', {
+    method: 'PATCH',
+    token,
+    body: { photos },
+  });
+}

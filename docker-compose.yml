@@ -35,6 +35,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    # Secrets qui ne doivent PAS être committés (CLAUDE.md §3.1) : clés
+    # Cloudinary aujourd'hui, autres tokens demain. Le fichier est dans
+    # .gitignore ; les valeurs ci-dessous restent des valeurs de dev sans
+    # intérêt pour un attaquant.
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql://mawid:mawid_dev_password@postgres:5432/mawid?schema=public
       BACKEND_PORT: 3001

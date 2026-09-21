@@ -566,6 +566,38 @@ aucun pouvoir supplémentaire.
 salons : en faire un privilège payant reviendrait à vendre la réparation
 d'un problème qu'on laisse grandir.
 
+**Lot 15 — Photos de salon.** ✅ Livré le 2026-09-21.
+
+`Salon.photos` existait depuis le premier schéma et la recherche affichait
+déjà `photos[0]` — mais **rien ne permettait d'en déposer**. Toutes les
+fiches étaient donc sans image, dans un secteur qui se vend à l'œil.
+
+**Première et seule dépendance externe du produit.** Le stockage local ne
+convenait pas : sur un hébergeur gratuit, le disque est effacé à chaque
+redéploiement et les photos disparaîtraient. Cloudinary, offre gratuite
+(25 crédits/mois, très au-dessus des besoins). La dépendance est cantonnée
+à `photos/cloudinary.service.ts` — rien d'autre ne la connaît, comme pour
+`PaymentProvider`.
+
+**Téléversement direct du navigateur vers Cloudinary**, le backend ne fait
+que signer. L'image ne traverse pas un serveur au budget mémoire serré, et
+l'API secret ne quitte jamais le serveur.
+
+**Ce qui revient du navigateur n'est pas digne de confiance.** On ne stocke
+jamais une URL fournie par le client : l'adresse est relue auprès de
+Cloudinary (`fetchResource`). Sans cela, un gérant pourrait faire pointer sa
+fiche vers n'importe quelle image du web. Trois barrières se cumulent — le
+dossier est signé, le préfixe est revérifié côté serveur, et l'existence est
+confirmée par l'hébergeur.
+
+**Le produit reste entier sans Cloudinary** : variables absentes, la
+fonctionnalité se désactive, le démarrage n'échoue pas et une fiche
+s'affiche sans photo.
+
+⚠️ `backend/.env` porte désormais de vrais secrets et est monté par
+`docker-compose.yml` via `env_file`. Il est dans `.gitignore` — ne jamais
+le committer (CLAUDE.md §3.1).
+
 ## 6. Hors périmètre, quelle que soit la version
 
 - Application mobile native — le business plan lui-même tranche : « PWA

@@ -4,6 +4,7 @@ import { getMySalon } from '@/lib/api-pro';
 import { fr } from '@/lib/i18n/fr';
 import { requireSessionToken } from '@/lib/session';
 import { SalonForm } from './salon-form';
+import { PhotoManager } from './photo-manager';
 
 export const metadata: Metadata = { title: fr.pro.salon.title };
 
@@ -24,6 +25,8 @@ export default async function SalonSettingsPage() {
           /{salon.slug}
         </Link>
       </p>
+
+      <PhotoManager initial={salon.photos} />
 
       <SalonForm salon={salon} />
     </main>

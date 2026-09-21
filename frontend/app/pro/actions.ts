@@ -786,3 +786,50 @@ export async function setRemindedAction(formData: FormData): Promise<void> {
   await pro.setReminded(token, id, reminded);
   revalidatePath('/pro/rappels');
 }
+
+// ============================================
+// Photos du salon
+// ============================================
+
+/**
+ * Autorisation d'envoi.
+ *
+ * Passe par une Server Action et non par un appel direct depuis le
+ * navigateur : le jeton de session vit dans un cookie `httpOnly` que le code
+ * client ne peut pas lire (lib/session.ts).
+ */
+export async function photoUploadSignatureAction(): Promise<pro.UploadSignature> {
+  const token = await requireSessionToken();
+
+  return pro.getUploadSignature(token);
+}
+
+export async function confirmPhotoAction(
+  publicId: string,
+): Promise<{ photos: string[] }> {
+  const token = await requireSessionToken();
+  const result = await pro.confirmPhoto(token, publicId);
+
+  revalidatePath('/pro/salon');
+  return result;
+}
+
+export async function deletePhotoAction(
+  url: string,
+): Promise<{ photos: string[] }> {
+  const token = await requireSessionToken();
+  const result = await pro.deletePhoto(token, url);
+
+  revalidatePath('/pro/salon');
+  return result;
+}
+
+export async function reorderPhotosAction(
+  photos: string[],
+): Promise<{ photos: string[] }> {
+  const token = await requireSessionToken();
+  const result = await pro.reorderPhotos(token, photos);
+
+  revalidatePath('/pro/salon');
+  return result;
+}

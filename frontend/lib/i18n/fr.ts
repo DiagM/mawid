@@ -176,6 +176,23 @@ export const fr = {
     signingIn: 'Connexion…',
     signOut: 'Déconnexion',
 
+    photos: {
+      title: 'Photos du salon',
+      help:
+        'La première photo est celle qui apparaît dans les résultats de recherche. Six photos maximum, 10 Mo chacune.',
+      add: 'Ajouter une photo',
+      uploading: 'Envoi en cours…',
+      remove: 'Supprimer',
+      makeFirst: 'Mettre en vitrine',
+      cover: 'Vitrine',
+      empty:
+        'Aucune photo. Une fiche sans image est nettement moins consultée.',
+      full: 'Vous avez atteint le maximum de photos.',
+      failed: 'L’envoi a échoué. Réessayez.',
+      tooLarge: 'Photo trop lourde (10 Mo maximum).',
+      wrongType: 'Choisissez une image (JPEG, PNG ou WebP).',
+    },
+
     reminders: {
       title: 'Rappels de la veille',
       help:
