@@ -674,6 +674,44 @@ toujours sur l'adresse : « rue dieh mohamed bouzareah » envoie Google chercher
 au jugé, et une destination approximative fait perdre une cliente aussi
 sûrement qu'un lien absent.
 
+**Lot 18 — Demandes d'avis.** ✅ Livré le 2026-09-21.
+
+La notation existait depuis le lot 10 et ne servait à rien. Le constat est
+simple : **rien n'invitait jamais la cliente à laisser un avis.** Elle recevait
+son lien de gestion au moment de réserver, venait, repartait — et le seul
+message du produit, le rappel, part *avant* la visite. Un gérant pouvait
+qualifier tous ses rendez-vous « Honoré » sans récolter une seule note.
+
+**Même mécanique que les rappels, pour la même raison.** Mawid n'envoie rien :
+un message automatique se facturerait à l'unité, ce que la contrainte de
+gratuité interdit. Le lien `wa.me` est préparé, le gérant écrit depuis son
+propre numéro — ce qui donne au message une chance d'être lu.
+
+**La liste ne propose que des rendez-vous `HONORED` sans avis.** Proposer un
+rendez-vous non qualifié enverrait la cliente sur une page qui lui oppose un
+refus, et le gérant ne comprendrait pas pourquoi. La règle du client est donc
+redite côté gérant plutôt que devinée.
+
+**Fenêtre de 14 jours.** Assez pour rattraper un gérant qui ne s'en occupe que
+le dimanche ; trop court pour redemander un avis sur une coupe dont la cliente
+ne se souvient plus. Un avis vague dessert le salon autant qu'une absence
+d'avis.
+
+**`reviewRequestedAt` est distinct de `remindedAt`.** Les deux messages partent
+à des moments opposés du rendez-vous ; les confondre ferait redemander un avis
+à quelqu'un qu'on vient seulement de rappeler. Comme pour les rappels, on garde
+la trace plutôt que de deviner : sans elle, un gérant interrompu au milieu de
+sa liste recommencerait au début et écrirait deux fois aux mêmes.
+
+**Une demande envoyée reste dans la liste** tant qu'aucun avis n'est arrivé.
+C'est la seule façon de relancer une fois sans deviner. Une cliente qui a noté
+en sort, elle : lui redemander serait au mieux inutile, au pire agaçant.
+
+**Découvrabilité assumée comme une partie de la fonctionnalité.** Une page que
+personne n'ouvre ne vaut pas mieux que pas de page : d'où l'entrée de
+navigation, et le bandeau « N cliente(s) peuvent laisser un avis » en tête des
+avis reçus — précisément là où un gérant se demande pourquoi il en a si peu.
+
 ## 6. Hors périmètre, quelle que soit la version
 
 - Application mobile native — le business plan lui-même tranche : « PWA

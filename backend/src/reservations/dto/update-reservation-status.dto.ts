@@ -37,3 +37,8 @@ export class MarkRemindedDto {
   @IsBoolean()
   reminded!: boolean;
 }
+
+export class MarkReviewRequestedDto {
+  @IsBoolean()
+  requested!: boolean;
+}

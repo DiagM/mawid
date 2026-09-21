@@ -100,6 +100,10 @@ export default async function ProLayout({
               <NavLink href="/pro/equipe" label={fr.pro.nav.team} />
               <NavLink href="/pro/rappels" label={fr.pro.nav.reminders} />
               <NavLink href="/pro/avis" label={fr.pro.nav.reviews} />
+              <NavLink
+                href="/pro/avis/demander"
+                label={fr.pro.nav.askReview}
+              />
               {/* Les modules hors offre restent VISIBLES, marqués de l'offre
                   qui les débloque. Les masquer priverait le gérant de toute
                   raison de monter en gamme — il ignorerait jusqu'à leur

@@ -13,6 +13,7 @@ import { ReservationsService } from './reservations.service';
 import { AgendaQueryDto } from './dto/agenda-query.dto';
 import {
   MarkRemindedDto,
+  MarkReviewRequestedDto,
   UpdateReservationStatusDto,
 } from './dto/update-reservation-status.dto';
 import {
@@ -84,6 +85,32 @@ export class ReservationsController {
     @Query() query: AgendaQueryDto,
   ) {
     return this.reservationsService.remindersFor(user.id, query.from);
+  }
+
+  /**
+   * GET /api/reservations/review-requests
+   * Rendez-vous honorés sans avis, à relancer. Déclarée avant /:id/... :
+   * aucun conflit, les préfixes diffèrent.
+   */
+  @Get('review-requests')
+  @UseGuards(JwtAuthGuard)
+  reviewRequests(@CurrentUser() user: AuthenticatedUser) {
+    return this.reservationsService.reviewRequestsFor(user.id);
+  }
+
+  /** PATCH /api/reservations/:id/review-requested — demande envoyée, ou non. */
+  @Patch(':id/review-requested')
+  @UseGuards(JwtAuthGuard)
+  setReviewRequested(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() dto: MarkReviewRequestedDto,
+  ) {
+    return this.reservationsService.setReviewRequested(
+      user.id,
+      id,
+      dto.requested,
+    );
   }
 
   /** PATCH /api/reservations/:id/reminded — rappel envoyé, ou non. */

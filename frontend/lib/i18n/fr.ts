@@ -227,6 +227,28 @@ export const fr = {
         'Le message contient le lien de gestion : la cliente peut se décommander seule, et le créneau repart à quelqu’un d’autre.',
     },
 
+    reviewRequests: {
+      title: 'Demander un avis',
+      help:
+        'Une cliente ne revient pas d’elle-même sur un lien reçu la semaine dernière. Sans cette relance, vous n’aurez presque aucun avis. Mawid n’envoie rien : vous écrivez depuis votre WhatsApp.',
+      window: 'Visites des {days} derniers jours, sans avis.',
+      empty:
+        'Personne à relancer. Un rendez-vous n’apparaît ici qu’une fois marqué « Honoré » dans votre agenda.',
+      progress: '{done} demande(s) envoyée(s) sur {total}',
+      send: 'Écrire sur WhatsApp',
+      sent: 'Demandé',
+      markSent: 'Marquer demandé',
+      markPending: 'Marquer à demander',
+      message:
+        'Bonjour {firstName}, merci de votre visite chez {salon} ! Si vous avez deux minutes, votre avis nous aiderait beaucoup : {link}',
+      linkHelp:
+        'Le lien ouvre la page de son rendez-vous, où la note et le commentaire l’attendent. Aucun compte à créer.',
+      banner: '{count} cliente(s) peuvent laisser un avis',
+      bannerAction: 'Leur demander',
+      onlyHonored:
+        'Seuls les rendez-vous marqués « Honoré » ouvrent le droit de noter. Pensez à les qualifier dans votre agenda.',
+    },
+
     waitlist: {
       title: '{count} cliente(s) en attente ce jour-là',
       help: '{pending} à rappeler. Première arrivée, première rappelée.',
@@ -333,6 +355,7 @@ export const fr = {
       prestations: 'Prestations',
       team: 'Équipe',
       reminders: 'Rappels',
+      askReview: 'Demander un avis',
       contact: 'Nous écrire',
       reviews: 'Avis',
       stats: 'Statistiques',

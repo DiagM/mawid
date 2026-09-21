@@ -827,6 +827,18 @@ export async function setRemindedAction(formData: FormData): Promise<void> {
   revalidatePath('/pro/rappels');
 }
 
+export async function setReviewRequestedAction(
+  formData: FormData,
+): Promise<void> {
+  const token = await requireSessionToken();
+  const id = String(formData.get('id') ?? '');
+  const requested = String(formData.get('requested') ?? '') === 'true';
+
+  await pro.setReviewRequested(token, id, requested);
+  revalidatePath('/pro/avis/demander');
+  revalidatePath('/pro/avis');
+}
+
 // ============================================
 // Photos du salon
 // ============================================

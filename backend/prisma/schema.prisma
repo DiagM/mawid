@@ -305,6 +305,12 @@ model Reservation {
   // de sa liste recommencerait au début et écrirait deux fois aux mêmes.
   remindedAt DateTime?
 
+  // Demande d'avis envoyée après la visite, à la main elle aussi.
+  // Distincte de `remindedAt` : les deux messages partent à des moments
+  // opposés du rendez-vous, et confondre les deux ferait redemander un
+  // avis à quelqu'un qu'on vient seulement de rappeler.
+  reviewRequestedAt DateTime?
+
   // Métadonnées
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

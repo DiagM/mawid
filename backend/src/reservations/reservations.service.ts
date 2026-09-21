@@ -24,6 +24,16 @@ import { buildQuotaStatus, type QuotaStatus } from '../common/plans';
 const PG_EXCLUSION_VIOLATION = '23P01';
 
 /**
+ * Fenetre de relance pour les avis, en jours.
+ *
+ * Deux semaines : assez pour rattraper un gerant qui ne s'en occupe que
+ * le dimanche, trop court pour qu'on redemande un avis sur une coupe dont
+ * la cliente ne se souvient plus. Un avis vague dessert le salon autant
+ * qu'une absence d'avis.
+ */
+const REVIEW_REQUEST_WINDOW_DAYS = 14;
+
+/**
  * Détecte une violation de la contrainte anti-chevauchement.
  *
  * Prisma n'expose pas ce code dans une erreur typée : il faut fouiller la
@@ -572,6 +582,94 @@ export class ReservationsService {
       where: { id: reservation.id },
       data: { remindedAt: reminded ? new Date() : null },
       select: { id: true, remindedAt: true },
+    });
+  }
+
+  /**
+   * Rendez-vous honorés qui n'ont pas encore reçu d'avis.
+   *
+   * Sans cette liste, la notation reste lettre morte : une cliente ne
+   * retourne pas d'elle-même sur un lien reçu trois jours plus tôt, et le
+   * seul message existant — le rappel — part AVANT la visite.
+   *
+   * Fenêtre glissante volontairement courte. Redemander un avis trois mois
+   * après une coupe n'apporte rien, et surtout la personne ne se souvient
+   * plus de rien : l'avis serait moins utile qu'absent.
+   */
+  async reviewRequestsFor(userId: string, days?: number) {
+    const salon = await this.getOwnedSalon(userId);
+
+    const window = days ?? REVIEW_REQUEST_WINDOW_DAYS;
+    const since = new Date(Date.now() - window * 24 * 60 * 60 * 1000);
+
+    const reservations = await this.prisma.reservation.findMany({
+      where: {
+        salonId: salon.id,
+        // Seuls les rendez-vous honorés ouvrent le droit de noter : c'est la
+        // meme regle que cote client, redite ici pour ne pas proposer au
+        // gerant d'envoyer un lien qui afficherait un refus.
+        status: 'HONORED',
+        startsAt: { gte: since, lte: new Date() },
+        // Une cliente qui a deja note n'a rien a faire dans cette liste : lui
+        // redemander serait au mieux inutile, au pire agacant.
+        review: null,
+      },
+      orderBy: { startsAt: 'desc' },
+      select: {
+        id: true,
+        startsAt: true,
+        clientFirstName: true,
+        clientPhone: true,
+        cancellationToken: true,
+        reviewRequestedAt: true,
+        employee: { select: { fullName: true } },
+        reservationPrestations: { select: { nameSnapshot: true } },
+      },
+    });
+
+    return {
+      windowDays: window,
+      items: reservations.map((reservation) => ({
+        id: reservation.id,
+        localDate: utcToLocalDate(reservation.startsAt),
+        localTime: utcToLocalTime(reservation.startsAt),
+        clientFirstName: reservation.clientFirstName,
+        clientPhone: reservation.clientPhone,
+        cancellationToken: reservation.cancellationToken,
+        reviewRequestedAt: reservation.reviewRequestedAt?.toISOString() ?? null,
+        employeeName: reservation.employee?.fullName ?? null,
+        prestations: reservation.reservationPrestations
+          .map((line) => line.nameSnapshot)
+          .join(' + '),
+      })),
+    };
+  }
+
+  /** Marque une demande d'avis comme envoyée, ou revient en arrière. */
+  async setReviewRequested(
+    userId: string,
+    reservationId: string,
+    requested: boolean,
+  ) {
+    const salon = await this.getOwnedSalon(userId);
+
+    const reservation = await this.prisma.reservation.findUnique({
+      where: { id: reservationId },
+      select: { id: true, salonId: true },
+    });
+
+    if (!reservation) {
+      throw new NotFoundException('Réservation introuvable');
+    }
+
+    if (reservation.salonId !== salon.id) {
+      throw new ForbiddenException("Vous n'avez pas accès à cette réservation");
+    }
+
+    return this.prisma.reservation.update({
+      where: { id: reservation.id },
+      data: { reviewRequestedAt: requested ? new Date() : null },
+      select: { id: true, reviewRequestedAt: true },
     });
   }
 

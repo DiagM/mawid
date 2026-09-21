@@ -714,6 +714,41 @@ export function setReminded(
   });
 }
 
+export interface ReviewRequestItem {
+  id: string;
+  localDate: string;
+  localTime: string;
+  clientFirstName: string;
+  clientPhone: string;
+  /** Sert a construire le lien de gestion glisse dans le message. */
+  cancellationToken: string;
+  reviewRequestedAt: string | null;
+  employeeName: string | null;
+  prestations: string;
+}
+
+export interface ReviewRequests {
+  windowDays: number;
+  items: ReviewRequestItem[];
+}
+
+export function getReviewRequests(token: string): Promise<ReviewRequests> {
+  return apiFetch<ReviewRequests>('/reservations/review-requests', {
+    token,
+  });
+}
+
+export function setReviewRequested(
+  token: string,
+  id: string,
+  requested: boolean,
+): Promise<unknown> {
+  return apiFetch(
+    `/reservations/${encodeURIComponent(id)}/review-requested`,
+    { method: 'PATCH', token, body: { requested } },
+  );
+}
+
 // ============================================
 // Photos du salon
 // ============================================
