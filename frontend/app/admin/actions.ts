@@ -173,3 +173,36 @@ export async function moderateReviewAction(
   await admin.moderateReview(token, reviewId, isPublished);
   revalidatePath('/admin/avis');
 }
+
+// ============================================
+// Demandes des salons
+// ============================================
+
+export async function setTicketStatusAction(
+  formData: FormData,
+): Promise<void> {
+  const token = await requireAdminToken();
+  const id = String(formData.get('id') ?? '');
+  const status = String(formData.get('status') ?? '');
+
+  await admin.updateTicket(token, id, { status });
+  revalidatePath('/admin/demandes');
+}
+
+export async function setTicketNoteAction(
+  _state: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  const token = await requireAdminToken();
+  const id = String(formData.get('id') ?? '');
+  const internalNote = String(formData.get('internalNote') ?? '');
+
+  try {
+    await admin.updateTicket(token, id, { internalNote });
+  } catch (error) {
+    return { error: toMessage(error, fr.common.error) };
+  }
+
+  revalidatePath('/admin/demandes');
+  return { success: fr.admin.saved };
+}

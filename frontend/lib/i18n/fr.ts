@@ -39,6 +39,7 @@ export const fr = {
     from: 'à partir de',
     featured: 'Mis en avant',
     forSalons: 'Vous êtes un salon ? Inscrivez-vous sur Mawid',
+    contact: 'Nous contacter',
   },
 
   salon: {
@@ -233,6 +234,7 @@ export const fr = {
       contact:
         'Contactez Mawid pour passer à l’offre {plan}. Vos données actuelles sont conservées, rien n’est perdu.',
       navHint: 'Offre {plan}',
+      cta: 'Demander l’offre {plan}',
       modules: {
         clients: {
           title: 'Votre clientèle',
@@ -317,6 +319,7 @@ export const fr = {
       prestations: 'Prestations',
       team: 'Équipe',
       reminders: 'Rappels',
+      contact: 'Nous écrire',
       reviews: 'Avis',
       stats: 'Statistiques',
       clients: 'Clients',
@@ -615,12 +618,34 @@ export const fr = {
       overview: 'Plateforme',
       salons: 'Salons',
       managers: 'Nouveau salon',
+      tickets: 'Demandes',
       reviews: 'Modération',
       publicSite: 'Site public',
     },
     saved: 'Enregistré.',
     forbidden: 'Cette action demande un compte administrateur.',
     featuredInvalid: 'Nombre de semaines attendu, entre 0 et 52.',
+    tickets: {
+      title: 'Demandes des salons',
+      help:
+        'Changements d’offre et problèmes signalés. Les demandes ouvertes d’abord.',
+      empty: 'Aucune demande dans cette file.',
+      filterOpen: 'Ouvertes',
+      filterInProgress: 'En cours',
+      filterClosed: 'Traitées',
+      filterAll: 'Toutes',
+      kindUpgrade: 'Changement d’offre',
+      kindIssue: 'Problème signalé',
+      kindOther: 'Autre demande',
+      currentPlan: 'offre actuelle',
+      noSalon: 'Pas de salon rattaché',
+      markInProgress: 'Prendre en charge',
+      markClosed: 'Marquer traitée',
+      markOpen: 'Rouvrir',
+      note: 'Note interne',
+      notePlaceholder: 'Jamais montrée à l’auteur.',
+      saveNote: 'Enregistrer la note',
+    },
 
     overview: {
       title: 'Vue d’ensemble',
@@ -880,6 +905,37 @@ export const fr = {
     done: 'Vous êtes sur la liste.',
     doneHelp:
       'Le salon vous contactera si une place se libère le {date}. Vous pouvez aussi essayer un autre jour.',
+  },
+  contact: {
+    metaTitle: 'Contact — Mawid',
+    metaDescription:
+      'Une question, un problème, une demande de changement d’offre : écrivez à l’équipe Mawid.',
+    title: 'Nous écrire',
+    intro:
+      'Une question, un souci technique, ou l’envie de passer à une offre supérieure. Nous répondons sur le numéro que vous laissez.',
+    kind: 'Votre demande',
+    kindUpgrade: 'Changer d’offre',
+    kindIssue: 'Signaler un problème',
+    kindOther: 'Autre',
+    plan: 'Offre souhaitée',
+    subject: 'Sujet',
+    subjectPlaceholder: 'En quelques mots',
+    message: 'Votre message',
+    messagePlaceholder:
+      'Décrivez votre demande. Plus c’est précis, plus la réponse sera rapide.',
+    name: 'Votre nom',
+    phone: 'Téléphone',
+    phoneHelp: 'C’est sur ce numéro que nous vous rappellerons.',
+    email: 'E-mail (optionnel)',
+    submit: 'Envoyer',
+    sending: 'Envoi…',
+    done: 'Votre demande est bien arrivée.',
+    doneHelp:
+      'Nous vous répondons sous 24 à 48 heures sur le numéro indiqué.',
+    another: 'Écrire un autre message',
+    backHome: 'Retour à l’accueil',
+    invalidPhone: 'Numéro de mobile algérien attendu (05, 06 ou 07).',
+    tooShort: 'Décrivez votre demande en quelques phrases.',
   },
 } as const;
 

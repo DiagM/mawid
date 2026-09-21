@@ -75,6 +75,13 @@ export default async function ProLayout({
             <Link href="/pro">
               <Logo size="sm" />
             </Link>
+            <Link
+              href="/contact"
+              className="text-sm text-muted underline underline-offset-4"
+            >
+              {fr.pro.nav.contact}
+            </Link>
+
             <form action={logoutAction}>
               <button
                 type="submit"

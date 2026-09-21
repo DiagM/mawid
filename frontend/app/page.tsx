@@ -167,6 +167,13 @@ export default async function HomePage({ searchParams }: PageProps) {
         >
           {fr.search.forSalons}
         </Link>
+        <span aria-hidden className="mx-2 text-border">·</span>
+        <Link
+          href="/contact"
+          className="text-sm text-muted underline underline-offset-4 hover:text-accent"
+        >
+          {fr.search.contact}
+        </Link>
       </footer>
     </main>
   );

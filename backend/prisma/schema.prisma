@@ -42,7 +42,8 @@ model User {
   // Relations
   // Un gérant peut techniquement avoir plusieurs salons (V2+)
   // En V1, on crée toujours 1 salon par gérant
-  salons Salon[]
+  salons  Salon[]
+  tickets SupportTicket[]
 
   @@index([phone])
   @@map("users") // Nom de table en base : users (snake_case par convention SQL)
@@ -115,6 +116,7 @@ model Salon {
   reviews         Review[]
   blockedClients  SalonBlockedClient[]
   waitlist        WaitlistEntry[]
+  tickets         SupportTicket[]
   cashMovements CashMovement[]
   products      Product[]
 
@@ -584,4 +586,64 @@ model WaitlistEntry {
   @@unique([salonId, clientId, desiredDate])
   @@index([salonId, desiredDate])
   @@map("waitlist_entries")
+}
+
+// ============================================
+// SupportTicket — Demandes adressées à Mawid
+// ============================================
+// Deux portes : un gérant connecté depuis son back-office, et n'importe qui
+// depuis la page contact publique — un salon pas encore inscrit doit pouvoir
+// écrire, c'est un canal d'acquisition.
+//
+// Un e-mail part vers le fondateur quand l'envoi est configuré, mais le
+// ticket est la source de vérité : un e-mail se perd dans une boîte, une
+// liste avec un statut ne se perd pas.
+enum TicketKind {
+  UPGRADE // Demande de changement d'offre
+  ISSUE   // Signalement d'un problème
+  OTHER
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+model SupportTicket {
+  id     String       @id @default(cuid())
+  kind   TicketKind
+  status TicketStatus @default(OPEN)
+
+  // Renseignés seulement si l'auteur était connecté. `onDelete: SetNull` :
+  // supprimer un compte ne doit pas effacer l'historique des échanges.
+  userId  String?
+  salonId String?
+
+  // Snapshots de contact, TOUJOURS remplis — même pour un gérant connecté.
+  // Un ticket doit rester exploitable quand le compte n'existe plus.
+  contactName  String
+  contactPhone String
+  contactEmail String?
+
+  subject String
+  message String @db.Text
+
+  // Offre visée, pour une demande de changement. Null ailleurs.
+  requestedPlan SalonPlan?
+
+  /// Note du fondateur, jamais renvoyée à l'auteur.
+  internalNote String? @db.Text
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  closedAt  DateTime?
+
+  user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  salon Salon? @relation(fields: [salonId], references: [id], onDelete: SetNull)
+
+  // Les tickets ouverts d'abord, les plus récents en tête : c'est l'ordre
+  // dans lequel on traite une file de support.
+  @@index([status, createdAt])
+  @@map("support_tickets")
 }

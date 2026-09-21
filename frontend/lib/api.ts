@@ -385,3 +385,29 @@ export function joinWaitlist(
     body: input,
   });
 }
+
+export interface CreateTicketInput {
+  kind: 'UPGRADE' | 'ISSUE' | 'OTHER';
+  subject: string;
+  message: string;
+  contactName: string;
+  contactPhone: string;
+  contactEmail?: string;
+  requestedPlan?: 'PRO' | 'PRO_PLUS';
+  /** Piège à robots : doit rester vide (docs/SECURITY.md §1.1). */
+  website?: string;
+}
+
+/**
+ * Demande adressée à Mawid.
+ *
+ * Deux routes pour une même action : `/mine` rattache automatiquement le
+ * salon du gérant connecté. Le jeton n'est pas lisible depuis le navigateur
+ * (cookie httpOnly), donc la version authentifiée passe par une Server
+ * Action.
+ */
+export function createTicket(
+  input: CreateTicketInput,
+): Promise<{ id: string }> {
+  return apiFetch('/support/tickets', { method: 'POST', body: input });
+}

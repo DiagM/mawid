@@ -20,6 +20,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
 import { PhotosModule } from './photos/photos.module';
+import { SupportModule } from './support/support.module';
 import { getThrottlerOptions } from './common/throttling/throttle-config';
 
 @Module({
@@ -42,6 +43,7 @@ import { getThrottlerOptions } from './common/throttling/throttle-config';
     AdminModule,
     WaitlistModule,
     PhotosModule,
+    SupportModule,
   ],
   controllers: [AppController],
   providers: [

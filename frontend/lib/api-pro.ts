@@ -768,3 +768,55 @@ export function reorderPhotos(
     body: { photos },
   });
 }
+
+// ============================================
+// Demandes adressées à Mawid
+// ============================================
+
+export function createTicketAsManager(
+  token: string,
+  input: import('./api').CreateTicketInput,
+): Promise<{ id: string }> {
+  return apiFetch('/support/tickets/mine', {
+    method: 'POST',
+    token,
+    body: input,
+  });
+}
+
+export interface SupportTicket {
+  id: string;
+  kind: 'UPGRADE' | 'ISSUE' | 'OTHER';
+  status: 'OPEN' | 'IN_PROGRESS' | 'CLOSED';
+  subject: string;
+  message: string;
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string | null;
+  requestedPlan: 'PRO' | 'PRO_PLUS' | null;
+  internalNote: string | null;
+  createdAt: string;
+  closedAt: string | null;
+  salon: { slug: string; name: string; plan: string } | null;
+}
+
+export function getTickets(
+  token: string,
+  status?: string,
+): Promise<SupportTicket[]> {
+  const suffix = status ? `?status=${encodeURIComponent(status)}` : '';
+
+  return apiFetch<SupportTicket[]>(`/admin/tickets${suffix}`, { token });
+}
+
+export function updateTicket(
+  token: string,
+  id: string,
+  body: { status?: string; internalNote?: string },
+): Promise<unknown> {
+  return apiFetch(`/admin/tickets/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    token,
+    body,
+  });
+}

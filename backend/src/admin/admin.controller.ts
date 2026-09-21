@@ -19,6 +19,8 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { SupportService } from '../support/support.service';
+import { TicketsQueryDto, UpdateTicketDto } from '../support/dto/support.dto';
 
 /**
  * Console d'administration de la plateforme (le fondateur).
@@ -32,7 +34,10 @@ import { Roles } from '../auth/decorators/roles.decorator';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly supportService: SupportService,
+  ) {}
 
   /** GET /api/admin/overview — chiffres de la plateforme. */
   @Get('overview')
@@ -81,5 +86,21 @@ export class AdminController {
   @Patch('reviews/:id')
   moderateReview(@Param('id') id: string, @Body() dto: ModerateReviewDto) {
     return this.adminService.moderateReview(id, dto);
+  }
+
+  // ============================================
+  // Demandes des salons
+  // ============================================
+
+  /** GET /api/admin/tickets?status=OPEN — file de traitement. */
+  @Get('tickets')
+  findTickets(@Query() query: TicketsQueryDto) {
+    return this.supportService.findAll(query);
+  }
+
+  /** PATCH /api/admin/tickets/:id — changer le statut, annoter. */
+  @Patch('tickets/:id')
+  updateTicket(@Param('id') id: string, @Body() dto: UpdateTicketDto) {
+    return this.supportService.update(id, dto);
   }
 }

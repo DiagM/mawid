@@ -31,6 +31,7 @@ export default async function AdminLayout({
   const links = [
     { href: '/admin', label: fr.admin.nav.overview },
     { href: '/admin/gerants', label: fr.admin.nav.managers },
+    { href: '/admin/demandes', label: fr.admin.nav.tickets },
     { href: '/admin/avis', label: fr.admin.nav.reviews },
   ];
 

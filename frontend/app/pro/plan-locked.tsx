@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { fr } from '@/lib/i18n/fr';
 import {
   PLAN_LABELS,
@@ -41,6 +42,15 @@ export function PlanLocked({ module }: { module: GatedModule }) {
         <p className="mt-6 text-sm text-muted">
           {fr.pro.locked.contact.replace('{plan}', required)}
         </p>
+
+        {/* Un refus sans suite ne vend rien : le lien emmene sur la page
+            contact avec la demande deja formulee et l'offre pre-remplie. */}
+        <Link
+          href={`/contact?sujet=offre&offre=${REQUIRED_PLAN[module]}`}
+          className="mt-4 inline-flex h-11 items-center rounded-xl bg-accent px-5 text-sm font-semibold text-white"
+        >
+          {fr.pro.locked.cta.replace('{plan}', required)}
+        </Link>
       </div>
     </main>
   );

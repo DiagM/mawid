@@ -155,3 +155,15 @@ export function moderateReview(
     body: { isPublished },
   });
 }
+
+export function updateTicket(
+  token: string,
+  id: string,
+  body: { status?: string; internalNote?: string },
+): Promise<unknown> {
+  return apiFetch(`/admin/tickets/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    token,
+    body,
+  });
+}
