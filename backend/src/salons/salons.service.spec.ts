@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { SalonsService } from './salons.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ReviewsService } from '../reviews/reviews.service';
+import { MapsLinkService } from './maps-link.service';
 
 /**
  * Premier argument du premier appel d'un mock, typé explicitement.
@@ -32,6 +33,7 @@ describe('SalonsService', () => {
     };
     $queryRaw: jest.Mock;
   };
+  let mapsLink: { resolve: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
@@ -43,6 +45,8 @@ describe('SalonsService', () => {
       },
       $queryRaw: jest.fn().mockResolvedValue([]),
     };
+
+    mapsLink = { resolve: jest.fn().mockResolvedValue(null) };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -59,6 +63,10 @@ describe('SalonsService', () => {
             summariesForSalons: jest.fn().mockResolvedValue(new Map()),
           },
         },
+        // Double : la resolution d'un lien Maps fait une requete reseau,
+        // testee separement dans maps-link.service.spec.ts. Ici on veut
+        // seulement pouvoir piloter son verdict.
+        { provide: MapsLinkService, useValue: mapsLink },
       ],
     }).compile();
 

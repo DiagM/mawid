@@ -46,6 +46,22 @@ export class UpdateSalonDto {
   @IsIn(CITIES)
   city?: City;
 
+  /**
+   * Lien Google Maps du salon, d'ou l'on tire la position.
+   *
+   * Personne ne connait sa latitude ; tout le monde sait partager son
+   * lien Maps. Le serveur en extrait le point, y compris pour un lien
+   * court `maps.app.goo.gl` dont il suit la redirection.
+   *
+   * Chaine vide = retirer la position. Appliquee APRES `latitude` et
+   * `longitude` : si les deux arrivent, c'est le lien qui fait foi,
+   * puisque c'est lui que le formulaire propose.
+   */
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  mapsUrl?: string;
+
   @IsOptional()
   @IsLatitude({ message: 'Latitude invalide' })
   latitude?: number | null;

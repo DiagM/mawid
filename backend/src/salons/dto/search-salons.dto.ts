@@ -2,6 +2,8 @@ import { Transform, Type } from 'class-transformer';
 import {
   IsIn,
   IsInt,
+  IsLatitude,
+  IsLongitude,
   IsOptional,
   IsString,
   Length,
@@ -35,6 +37,24 @@ export class SearchSalonsDto {
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === '1' || value === true)
   womenOnly?: boolean;
+
+  /**
+   * Position du client, pour la recherche « autour de moi ».
+   *
+   * Fournie par le navigateur, jamais stockee : elle ne sert qu'a
+   * ordonner une page de resultats. Les deux valeurs vont ensemble —
+   * une seule des deux est refusee par le service, faute de quoi on
+   * trierait par rapport a un point situe sur l'equateur.
+   */
+  @IsOptional()
+  @Type(() => Number)
+  @IsLatitude({ message: 'Latitude invalide' })
+  lat?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsLongitude({ message: 'Longitude invalide' })
+  lng?: number;
 
   @IsOptional()
   @Type(() => Number)
